@@ -2,6 +2,8 @@
 
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
 import { isLikelyUrl } from "@/lib/url";
+import { filesToPromptImages, MAX_PROMPT_IMAGES } from "@/lib/prompt-images";
+import { PromptImageAttachButton, PromptImageThumbnails } from "@/components/PromptImageAttachments";
 
 interface HeroInputProps {
   value: string;
@@ -10,6 +12,9 @@ interface HeroInputProps {
   placeholder?: string;
   className?: string;
   showSearchFeatures?: boolean;
+  allowImages?: boolean;
+  images?: string[];
+  onImagesChange?: (images: string[]) => void;
 }
 
 export default function HeroInput({ 
@@ -18,12 +23,24 @@ export default function HeroInput({
   onSubmit, 
   placeholder = "Describe what you want to build...",
   className = "",
-  showSearchFeatures = true
+  showSearchFeatures = true,
+  allowImages = false,
+  images = [],
+  onImagesChange,
 }: HeroInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isURLInput = showSearchFeatures ? isLikelyUrl(value) : false;
+  const canSubmit = Boolean(value.trim() || (allowImages && images.length > 0));
+
+  const addImageFiles = async (files: FileList | File[]) => {
+    if (!allowImages || !onImagesChange) return;
+    const next = await filesToPromptImages(files, images.length);
+    if (next.length) {
+      onImagesChange([...images, ...next].slice(0, MAX_PROMPT_IMAGES));
+    }
+  };
 
   // Reset textarea height when value changes (especially when cleared)
   useEffect(() => {
@@ -104,43 +121,76 @@ export default function HeroInput({
             )}
           </div>
 
-          <textarea
-            ref={textareaRef}
-            className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none min-h-[24px] leading-6"
-            placeholder={placeholder}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            rows={1}
-            style={{
-              height: 'auto',
-              overflow: 'hidden'
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = target.scrollHeight + 'px';
-            }}
-          />
+          <div className="flex-1 min-w-0 flex flex-col gap-10">
+            <textarea
+              ref={textareaRef}
+              className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none min-h-[24px] leading-6"
+              placeholder={placeholder}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onPaste={(e) => {
+                const files = Array.from(e.clipboardData.files).filter((file) => file.type.startsWith('image/'));
+                if (files.length) {
+                  e.preventDefault();
+                  void addImageFiles(files);
+                }
+              }}
+              onDrop={(e) => {
+                const files = Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/'));
+                if (files.length) {
+                  e.preventDefault();
+                  void addImageFiles(files);
+                }
+              }}
+              onDragOver={(e) => {
+                if (allowImages) e.preventDefault();
+              }}
+              rows={1}
+              style={{
+                height: 'auto',
+                overflow: 'hidden'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = target.scrollHeight + 'px';
+              }}
+            />
+            {allowImages && (
+              <PromptImageThumbnails
+                images={images}
+                onRemove={(index) => onImagesChange?.(images.filter((_, i) => i !== index))}
+              />
+            )}
+          </div>
         </label>
 
-        <div className="p-10 flex justify-end items-center relative">
+        <div className="p-10 flex justify-between items-center relative">
+          {allowImages ? (
+            <PromptImageAttachButton
+              remaining={MAX_PROMPT_IMAGES - images.length}
+              onFiles={(files) => void addImageFiles(files)}
+            />
+          ) : (
+            <div />
+          )}
           <button
             onClick={onSubmit}
-            disabled={!value.trim()}
+            disabled={!canSubmit}
             className={`
               button relative rounded-10 px-8 py-8 text-label-medium font-medium
               flex items-center justify-center gap-6
-              ${value.trim() 
+              ${canSubmit 
                 ? 'button-primary text-accent-white active:scale-[0.995]' 
                 : 'bg-black-alpha-4 text-black-alpha-24 cursor-not-allowed'
               }
             `}
           >
-            {value.trim() && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
-            {value.trim() ? (
+            {canSubmit && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
+            {canSubmit ? (
               <>
                 <span className="px-6 relative">Re-imagine Site</span>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

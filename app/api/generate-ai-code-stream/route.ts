@@ -57,7 +57,7 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false } = await request.json();
+    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, images = [] } = await request.json();
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -65,6 +65,13 @@ export async function POST(request: NextRequest) {
     console.log('[generate-ai-code-stream] - context.sandboxId:', context?.sandboxId);
     console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
     console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
+    console.log('[generate-ai-code-stream] - images:', Array.isArray(images) ? images.length : 0);
+
+    const promptImages = Array.isArray(images)
+      ? images.filter((image: unknown): image is string => (
+          typeof image === 'string' && image.startsWith('data:image/')
+        )).slice(0, 4)
+      : [];
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -1227,7 +1234,36 @@ REMEMBER: It's better to generate fewer COMPLETE files than many INCOMPLETE file
             },
             { 
               role: 'user', 
-              content: fullPrompt + `
+              content: promptImages.length
+                ? [
+                    {
+                      type: 'text' as const,
+                      text: fullPrompt + `
+
+CRITICAL: You MUST complete EVERY file you start. If you write:
+<file path="src/components/Hero.jsx">
+
+You MUST include the closing </file> tag and ALL the code in between.
+
+NEVER write partial code like:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text...</p>  ❌ WRONG
+
+ALWAYS write complete code:
+<h1>Build and deploy on the AI Cloud.</h1>
+<p>Some text here with full content</p>  ✅ CORRECT
+
+If you're running out of space, generate FEWER files but make them COMPLETE.
+It's better to have 3 complete files than 10 incomplete files.
+
+The user attached ${promptImages.length} reference image(s). Match the visual design, layout, colors, and UI shown in those images.`
+                    },
+                    ...promptImages.map((image) => ({
+                      type: 'image' as const,
+                      image,
+                    })),
+                  ]
+                : fullPrompt + `
 
 CRITICAL: You MUST complete EVERY file you start. If you write:
 <file path="src/components/Hero.jsx">

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { appConfig } from '@/config/app.config';
 import { isLikelyUrl } from '@/lib/url';
 import { toast } from "sonner";
+import { filesToPromptImages, MAX_PROMPT_IMAGES, setPendingPromptImages } from "@/lib/prompt-images";
+import { PromptImageAttachButton, PromptImageThumbnails } from "@/components/PromptImageAttachments";
 
 // Import shared components
 import { Connector } from "@/components/shared/layout/curvy-rect";
@@ -19,6 +21,7 @@ import HomeHeroBadge from "@/components/app/(home)/sections/hero/Badge/Badge";
 import HomeHeroPixi from "@/components/app/(home)/sections/hero/Pixi/Pixi";
 import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
+import ModelSelect, { getStoredModel } from "@/components/ModelSelect";
 // import Globe from "@/components/app/(home)/sections/hero-input/_svg/Globe";
 
 // Import header components
@@ -38,7 +41,7 @@ interface SearchResult {
 
 export default function HomePage() {
   const [url, setUrl] = useState<string>("");
-  const selectedModel = appConfig.ai.defaultModel;
+  const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
   const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
   const [showSearchTiles, setShowSearchTiles] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -50,13 +53,15 @@ export default function HomePage() {
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
   const [firecrawlEnabled, setFirecrawlEnabled] = useState<boolean>(true);
+  const [promptImages, setPromptImages] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem('firecrawlEnabled');
-    if (stored === 'false') {
+    const storedFirecrawl = localStorage.getItem('firecrawlEnabled');
+    if (storedFirecrawl === 'false') {
       setFirecrawlEnabled(false);
     }
+    setSelectedModel(getStoredModel());
   }, []);
 
   const toggleFirecrawl = () => {
@@ -72,7 +77,20 @@ export default function HomePage() {
       setExtendBrandStyles(false);
       setIsValidUrl(false);
     } else {
+      setPromptImages([]);
       setIsValidUrl(validateUrl(url));
+    }
+  };
+
+  const addPromptFiles = async (files: FileList | File[]) => {
+    try {
+      const next = await filesToPromptImages(files, promptImages.length);
+      if (next.length) {
+        setPromptImages((current) => [...current, ...next].slice(0, MAX_PROMPT_IMAGES));
+      }
+    } catch (error) {
+      console.error('Failed to attach image:', error);
+      toast.error('Could not attach that image. Try another file.');
     }
   };
   
@@ -89,13 +107,15 @@ export default function HomePage() {
   const handleSubmit = async (selectedResult?: SearchResult) => {
     const inputValue = url.trim();
 
-    if (!inputValue) {
-      toast.error(firecrawlEnabled ? "Please enter a URL or search term" : "Please describe what you want to build");
+    if (!inputValue && (firecrawlEnabled || promptImages.length === 0)) {
+      toast.error(firecrawlEnabled ? "Please enter a URL or search term" : "Please describe what you want to build or attach an image");
       return;
     }
 
     if (!firecrawlEnabled) {
-      sessionStorage.setItem('directPrompt', inputValue);
+      const promptText = inputValue || 'Build a React app inspired by the attached reference images.';
+      setPendingPromptImages(promptImages);
+      sessionStorage.setItem('directPrompt', promptText);
       sessionStorage.setItem('directPromptMode', 'true');
       sessionStorage.setItem('selectedModel', selectedModel);
       sessionStorage.setItem('autoStart', 'true');
@@ -446,22 +466,51 @@ export default function HomePage() {
                         }}
                       />
                       ) : (
-                      <textarea
-                        className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[48px] leading-6"
-                        placeholder="Describe what you want to build..."
-                        value={url}
-                        rows={2}
-                        onChange={(e) => {
-                          setUrl(e.target.value);
-                          setIsValidUrl(false);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit();
-                          }
-                        }}
-                      />
+                      <>
+                      <div className="flex-1 min-w-0 flex flex-col gap-10">
+                        <textarea
+                          className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[48px] leading-6"
+                          placeholder="Describe what you want to build, or attach a reference image..."
+                          value={url}
+                          rows={2}
+                          onChange={(e) => {
+                            setUrl(e.target.value);
+                            setIsValidUrl(false);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmit();
+                            }
+                          }}
+                          onPaste={(e) => {
+                            const files = Array.from(e.clipboardData.files).filter((file) => file.type.startsWith('image/'));
+                            if (files.length) {
+                              e.preventDefault();
+                              void addPromptFiles(files);
+                            }
+                          }}
+                          onDrop={(e) => {
+                            const files = Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/'));
+                            if (files.length) {
+                              e.preventDefault();
+                              void addPromptFiles(files);
+                            }
+                          }}
+                          onDragOver={(e) => e.preventDefault()}
+                        />
+                        <PromptImageThumbnails
+                          images={promptImages}
+                          onRemove={(index) => setPromptImages((current) => current.filter((_, i) => i !== index))}
+                        />
+                      </div>
+                      <div className="self-end">
+                        <PromptImageAttachButton
+                          remaining={MAX_PROMPT_IMAGES - promptImages.length}
+                          onFiles={(files) => void addPromptFiles(files)}
+                        />
+                      </div>
+                      </>
                       )}
                       <div
                         onClick={(e) => {
@@ -473,7 +522,7 @@ export default function HomePage() {
                         className={`${isSearching ? 'pointer-events-none' : ''} ${!firecrawlEnabled ? 'self-end' : ''}`}
                       >
                         <HeroInputSubmitButton 
-                          dirty={url.length > 0} 
+                          dirty={url.length > 0 || (!firecrawlEnabled && promptImages.length > 0)} 
                           buttonText={
                             !firecrawlEnabled
                               ? 'Generate'
@@ -536,6 +585,14 @@ export default function HomePage() {
                             }}
                           />
                         </button>
+                      </div>
+                    </div>
+                    <div className="py-8 grid grid-cols-2 items-center gap-12">
+                      <div className="text-xs font-medium text-black-alpha-72">
+                        Model
+                      </div>
+                      <div className="flex justify-end">
+                        <ModelSelect value={selectedModel} onChange={setSelectedModel} />
                       </div>
                     </div>
                   </div>

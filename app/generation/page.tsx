@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
+import ModelSelect, { getStoredModel } from '@/components/ModelSelect';
+import { takePendingPromptImages } from '@/lib/prompt-images';
 import SidebarInput from '@/components/app/generation/SidebarInput';
 import HeaderBrandKit from '@/components/shared/header/BrandKit/BrandKit';
 import { HeaderProvider } from '@/components/shared/header/HeaderContext';
@@ -44,6 +46,7 @@ interface ChatMessage {
     commandType?: 'input' | 'output' | 'error' | 'success';
     brandingData?: any;
     sourceUrl?: string;
+    images?: string[];
   };
 }
 
@@ -80,7 +83,10 @@ function AISandboxPage() {
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
     const modelParam = searchParams.get('model');
-    return appConfig.ai.availableModels.includes(modelParam || '') ? modelParam! : appConfig.ai.defaultModel;
+    if (modelParam) {
+      return modelParam;
+    }
+    return getStoredModel();
   });
   const [urlOverlayVisible, setUrlOverlayVisible] = useState(false);
   const [urlInput, setUrlInput] = useState('');
@@ -109,6 +115,8 @@ function AISandboxPage() {
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
   const [fileStructure, setFileStructure] = useState<string>('');
   const [directPromptMode, setDirectPromptMode] = useState(false);
+  const [chatImages, setChatImages] = useState<string[]>([]);
+  const initialPromptImagesRef = useRef<string[]>([]);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -125,6 +133,7 @@ function AISandboxPage() {
   });
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const sandboxDataRef = useRef<SandboxData | null>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
   
@@ -216,6 +225,9 @@ function AISandboxPage() {
         sessionStorage.removeItem('selectedStyle');
         sessionStorage.removeItem('selectedModel');
         sessionStorage.removeItem('additionalInstructions');
+
+        const pendingImages = takePendingPromptImages();
+        initialPromptImagesRef.current = pendingImages;
 
         setDirectPromptMode(true);
         setHomeUrlInput(storedDirectPrompt);
@@ -309,6 +321,10 @@ function AISandboxPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showHomeScreen]);
+
+  useEffect(() => {
+    sandboxDataRef.current = sandboxData;
+  }, [sandboxData]);
   
   // Start capturing screenshot if URL is provided on mount (from home screen)
   useEffect(() => {
@@ -546,6 +562,7 @@ function AISandboxPage() {
       if (data.success) {
         sandboxCreationRef.current = false; // Reset the ref on success
         console.log('[createSandbox] Setting sandboxData from creation:', data);
+        sandboxDataRef.current = data;
         setSandboxData(data);
         updateStatus('Sandbox active', true);
         log('Sandbox created successfully!');
@@ -613,6 +630,33 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
+  const schedulePreviewRefresh = (sandboxUrl?: string, packagesInstalled = false) => {
+    const url = sandboxUrl || sandboxDataRef.current?.url || sandboxData?.url;
+    if (!url) {
+      console.warn('[applyGeneratedCode] Preview refresh skipped: sandbox URL not ready yet');
+      return;
+    }
+
+    setActiveTab('preview');
+    const delay = packagesInstalled
+      ? appConfig.codeApplication.packageInstallRefreshDelay
+      : appConfig.codeApplication.defaultRefreshDelay;
+
+    const attemptRefresh = (attemptsLeft: number) => {
+      if (iframeRef.current) {
+        iframeRef.current.src = `${url}?t=${Date.now()}&applied=true`;
+        return;
+      }
+      if (attemptsLeft > 0) {
+        setTimeout(() => attemptRefresh(attemptsLeft - 1), 150);
+        return;
+      }
+      console.warn('[applyGeneratedCode] Preview iframe not mounted yet; sandbox URL is ready');
+    };
+
+    setTimeout(() => attemptRefresh(20), delay);
+  };
+
   const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData) => {
     setLoading(true);
     log('Applying AI-generated code...');
@@ -630,7 +674,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       }
       
       // Use streaming endpoint for real-time feedback
-      const effectiveSandboxData = overrideSandboxData || sandboxData;
+      const effectiveSandboxData = overrideSandboxData || sandboxData || sandboxDataRef.current;
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -929,112 +973,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           // The build test was trying to access global.activeSandbox from the frontend,
           // but that's only available in the backend API routes
           console.log('[build-test] Skipping build test - would need API endpoint');
-          
-          // Force iframe refresh after applying code
-          const refreshDelay = appConfig.codeApplication.defaultRefreshDelay; // Allow Vite to process changes
-          
-          setTimeout(() => {
-            const currentSandboxData = effectiveSandboxData;
-            if (iframeRef.current && currentSandboxData?.url) {
-              console.log('[home] Refreshing iframe after code application...');
-              
-              // Method 1: Change src with timestamp
-              const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&applied=true`;
-              iframeRef.current.src = urlWithTimestamp;
-              
-              // Method 2: Force reload after a short delay
-              setTimeout(() => {
-                try {
-                  if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.location.reload();
-                    console.log('[home] Force reloaded iframe content');
-                  }
-                } catch (e) {
-                  console.log('[home] Could not reload iframe (cross-origin):', e);
-                }
-                // Reload completed
-              }, 1000);
-            }
-          }, refreshDelay);
-          
-          // Vite error checking removed - handled by template setup
         }
-        
-          // Give Vite HMR a moment to detect changes, then ensure refresh
-          const currentSandboxData = effectiveSandboxData;
-          if (iframeRef.current && currentSandboxData?.url) {
-            // Wait for Vite to process the file changes
-            // If packages were installed, wait longer for Vite to restart
-            const packagesInstalled = results?.packagesInstalled?.length > 0 || data.results?.packagesInstalled?.length > 0;
-            const refreshDelay = packagesInstalled ? appConfig.codeApplication.packageInstallRefreshDelay : appConfig.codeApplication.defaultRefreshDelay;
-            console.log(`[applyGeneratedCode] Packages installed: ${packagesInstalled}, refresh delay: ${refreshDelay}ms`);
-            
-            setTimeout(async () => {
-            if (iframeRef.current && currentSandboxData?.url) {
-              console.log('[applyGeneratedCode] Starting iframe refresh sequence...');
-              console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current.src);
-              console.log('[applyGeneratedCode] Sandbox URL:', currentSandboxData.url);
-              
-              // Method 1: Try direct navigation first
-              try {
-                const urlWithTimestamp = `${currentSandboxData.url}?t=${Date.now()}&force=true`;
-                console.log('[applyGeneratedCode] Attempting direct navigation to:', urlWithTimestamp);
-                
-                // Remove any existing onload handler
-                iframeRef.current.onload = null;
-                
-                // Navigate directly
-                iframeRef.current.src = urlWithTimestamp;
-                
-                // Wait a bit and check if it loaded
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Try to access the iframe content to verify it loaded
-                try {
-                  const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
-                  if (iframeDoc && iframeDoc.readyState === 'complete') {
-                    console.log('[applyGeneratedCode] Iframe loaded successfully');
-                    return;
-                  }
-                } catch {
-                  console.log('[applyGeneratedCode] Cannot access iframe content (CORS), assuming loaded');
-                  return;
-                }
-              } catch (e) {
-                console.error('[applyGeneratedCode] Direct navigation failed:', e);
-              }
-              
-              // Method 2: Force complete iframe recreation if direct navigation failed
-              console.log('[applyGeneratedCode] Falling back to iframe recreation...');
-              const parent = iframeRef.current.parentElement;
-              const newIframe = document.createElement('iframe');
-              
-              // Copy attributes
-              newIframe.className = iframeRef.current.className;
-              newIframe.title = iframeRef.current.title;
-              newIframe.allow = iframeRef.current.allow;
-              // Copy sandbox attributes
-              const sandboxValue = iframeRef.current.getAttribute('sandbox');
-              if (sandboxValue) {
-                newIframe.setAttribute('sandbox', sandboxValue);
-              }
-              
-              // Remove old iframe
-              iframeRef.current.remove();
-              
-              // Add new iframe
-              newIframe.src = `${currentSandboxData.url}?t=${Date.now()}&recreated=true`;
-              parent?.appendChild(newIframe);
-              
-              // Update ref
-              (iframeRef as any).current = newIframe;
-              
-              console.log('[applyGeneratedCode] Iframe recreated with new content');
-            } else {
-              console.error('[applyGeneratedCode] No iframe or sandbox URL available for refresh');
-            }
-          }, refreshDelay); // Dynamic delay based on whether packages were installed
-        }
+
+        const packagesInstalled = results?.packagesInstalled?.length > 0 || data.results?.packagesInstalled?.length > 0;
+        schedulePreviewRefresh(effectiveSandboxData?.url, packagesInstalled);
         
         } else {
           throw new Error(finalData?.error || 'Failed to apply code');
@@ -1706,7 +1648,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   const sendChatMessage = async () => {
-    const message = aiChatInput.trim();
+    const images = [...chatImages];
+    const message = aiChatInput.trim() || (images.length ? 'Update the app using the attached reference images.' : '');
     if (!message) return;
     
     if (!aiEnabled) {
@@ -1714,8 +1657,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       return;
     }
     
-    addChatMessage(message, 'user');
+    addChatMessage(message, 'user', images.length ? { images } : undefined);
     setAiChatInput('');
+    setChatImages([]);
     
     // Check for special commands
     const lowerMessage = message.toLowerCase().trim();
@@ -1791,7 +1735,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           prompt: message,
           model: aiModel,
           context: fullContext,
-          isEdit: conversationContext.appliedCode.length > 0
+          isEdit: conversationContext.appliedCode.length > 0,
+          images
         })
       });
       
@@ -2653,7 +2598,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     const brandExtensionMode = sessionStorage.getItem('brandExtensionMode') === 'true';
 
     if (isDirectPrompt) {
-      addChatMessage(homeUrlInput.trim(), 'user');
+      const attachedImages = initialPromptImagesRef.current;
+      addChatMessage(homeUrlInput.trim() || 'Generate from reference images', 'user', attachedImages.length ? { images: attachedImages } : undefined);
       addChatMessage('Creating a sandbox and generating your app from the prompt...', 'system');
     } else {
       addChatMessage(
@@ -2807,6 +2753,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         let prompt;
 
         if (isDirectPrompt) {
+          const attachedImages = initialPromptImagesRef.current;
           setConversationContext(prev => ({
             ...prev,
             currentProject: homeUrlInput.trim().slice(0, 80)
@@ -2816,6 +2763,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
 USER REQUEST:
 ${homeUrlInput.trim()}
+
+${attachedImages.length ? `The user attached ${attachedImages.length} reference image(s). Use them as visual references for layout, colors, typography, components, and overall UI. Recreate the look shown in the images as a working React app.` : ''}
 
 ${homeContextInput ? `ADDITIONAL CONTEXT/REQUIREMENTS FROM USER:
 ${homeContextInput}
@@ -3054,6 +3003,7 @@ Focus on the key sections and content, making it clean and modern.`;
           body: JSON.stringify({ 
             prompt,
             model: aiModel,
+            images: isDirectPrompt ? initialPromptImagesRef.current : undefined,
             context: {
               sandboxId: sandboxData?.sandboxId,
               structure: structureContent,
@@ -3240,8 +3190,15 @@ Focus on the key sections and content, making it clean and modern.`;
           
           setPromptInput(generatedCode);
 
+          const sandboxForApply = createdSandbox || sandboxDataRef.current || sandboxData;
+          if (createdSandbox) {
+            sandboxDataRef.current = createdSandbox;
+            setSandboxData(createdSandbox);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+
           // Apply the code (first time is not edit mode)
-          await applyGeneratedCode(generatedCode, false);
+          await applyGeneratedCode(generatedCode, false, sandboxForApply || undefined);
 
           addChatMessage(
             isDirectPrompt
@@ -3320,27 +3277,20 @@ Focus on the key sections and content, making it clean and modern.`;
       <div className="bg-white py-[15px] py-[8px] border-b border-border-faint flex items-center justify-between shadow-sm">
         <HeaderBrandKit />
         <div className="flex items-center gap-2">
-          {/* Model Selector - Left side */}
-          <select
+          {/* Model Selector */}
+          <ModelSelect
             value={aiModel}
-            onChange={(e) => {
-              const newModel = e.target.value;
-              setAiModel(newModel);
+            onChange={(model) => {
+              setAiModel(model);
               const params = new URLSearchParams(searchParams);
-              params.set('model', newModel);
+              params.set('model', model);
               if (sandboxData?.sandboxId) {
                 params.set('sandbox', sandboxData.sandboxId);
               }
               router.push(`/generation?${params.toString()}`);
             }}
-            className="px-3 py-1.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
-          >
-            {appConfig.ai.availableModels.map(model => (
-              <option key={model} value={model}>
-                {appConfig.ai.modelDisplayNames?.[model] || model}
-              </option>
-            ))}
-          </select>
+            className="min-w-[220px]"
+          />
           <button 
             onClick={() => createSandbox()}
             className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
@@ -3539,7 +3489,22 @@ Focus on the key sections and content, making it clean and modern.`;
                         </div>
                       </div>
                     ) : (
-                      <span className="text-sm">{msg.content}</span>
+                      <div className="text-sm">
+                        {msg.metadata?.images && msg.metadata.images.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {msg.metadata.images.map((src, imageIndex) => (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                key={imageIndex}
+                                src={src}
+                                alt=""
+                                className="h-56 w-56 object-cover rounded-6 border border-white/20"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <span>{msg.content}</span>
+                      </div>
                     )}
                       </div>
                   
@@ -3882,12 +3847,30 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           <div className="p-4 border-t border-border bg-background-base">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[11px] text-black-alpha-48">Model</span>
+              <ModelSelect
+                value={aiModel}
+                onChange={(model) => {
+                  setAiModel(model);
+                  const params = new URLSearchParams(searchParams);
+                  params.set('model', model);
+                  if (sandboxData?.sandboxId) {
+                    params.set('sandbox', sandboxData.sandboxId);
+                  }
+                  router.push(`/generation?${params.toString()}`);
+                }}
+              />
+            </div>
             <HeroInput
               value={aiChatInput}
               onChange={setAiChatInput}
               onSubmit={sendChatMessage}
               placeholder="Describe what you want to build..."
               showSearchFeatures={false}
+              allowImages
+              images={chatImages}
+              onImagesChange={setChatImages}
             />
           </div>
         </div>

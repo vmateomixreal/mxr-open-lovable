@@ -56,11 +56,21 @@ export const appConfig = {
     // Available models (OpenRouter slugs)
     availableModels: [
       'anthropic/claude-sonnet-4.6',
+      'anthropic/claude-opus-4.1',
+      'openai/gpt-4.1',
+      'openai/gpt-4o',
+      'google/gemini-2.5-pro',
+      'google/gemini-2.5-flash',
     ],
     
     // Model display names
     modelDisplayNames: {
       'anthropic/claude-sonnet-4.6': 'Claude Sonnet 4.6',
+      'anthropic/claude-opus-4.1': 'Claude Opus 4.1',
+      'openai/gpt-4.1': 'GPT-4.1',
+      'openai/gpt-4o': 'GPT-4o',
+      'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
+      'google/gemini-2.5-flash': 'Gemini 2.5 Flash',
     } as Record<string, string>,
     
     // Model API configuration
@@ -68,6 +78,26 @@ export const appConfig = {
       'anthropic/claude-sonnet-4.6': {
         provider: 'openrouter',
         model: 'anthropic/claude-sonnet-4.6'
+      },
+      'anthropic/claude-opus-4.1': {
+        provider: 'openrouter',
+        model: 'anthropic/claude-opus-4.1'
+      },
+      'openai/gpt-4.1': {
+        provider: 'openrouter',
+        model: 'openai/gpt-4.1'
+      },
+      'openai/gpt-4o': {
+        provider: 'openrouter',
+        model: 'openai/gpt-4o'
+      },
+      'google/gemini-2.5-pro': {
+        provider: 'openrouter',
+        model: 'google/gemini-2.5-pro'
+      },
+      'google/gemini-2.5-flash': {
+        provider: 'openrouter',
+        model: 'google/gemini-2.5-flash'
       }
     },
     
