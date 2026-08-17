@@ -8,12 +8,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) {
+      console.error('[search] FIRECRAWL_API_KEY is not set. Add it to .env.local and restart next dev.');
+      return NextResponse.json(
+        { error: 'FIRECRAWL_API_KEY is not configured. Add it to .env.local and restart the server.' },
+        { status: 500 }
+      );
+    }
+
     // Use Firecrawl search to get top 10 results with screenshots
     const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         query,
@@ -26,7 +35,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (!searchResponse.ok) {
-      throw new Error('Search failed');
+      const errorBody = await searchResponse.text();
+      console.error('[search] Firecrawl error:', searchResponse.status, errorBody);
+      return NextResponse.json(
+        { error: `Firecrawl search failed (${searchResponse.status}): ${errorBody}` },
+        { status: searchResponse.status }
+      );
     }
 
     const searchData = await searchResponse.json();

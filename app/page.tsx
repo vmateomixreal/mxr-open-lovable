@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { appConfig } from '@/config/app.config';
 import { isLikelyUrl } from '@/lib/url';
@@ -39,8 +38,7 @@ interface SearchResult {
 
 export default function HomePage() {
   const [url, setUrl] = useState<string>("");
-  const [selectedStyle, setSelectedStyle] = useState<string>("1");
-  const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
+  const selectedModel = appConfig.ai.defaultModel;
   const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
   const [showSearchTiles, setShowSearchTiles] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -51,7 +49,32 @@ export default function HomePage() {
   const [showInstructionsForIndex, setShowInstructionsForIndex] = useState<number | null>(null);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
+  const [firecrawlEnabled, setFirecrawlEnabled] = useState<boolean>(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('firecrawlEnabled');
+    if (stored === 'false') {
+      setFirecrawlEnabled(false);
+    }
+  }, []);
+
+  const toggleFirecrawl = () => {
+    const next = !firecrawlEnabled;
+    setFirecrawlEnabled(next);
+    localStorage.setItem('firecrawlEnabled', String(next));
+    if (!next) {
+      setSearchResults([]);
+      setHasSearched(false);
+      setShowSearchTiles(false);
+      setShowSelectMessage(false);
+      setIsSearching(false);
+      setExtendBrandStyles(false);
+      setIsValidUrl(false);
+    } else {
+      setIsValidUrl(validateUrl(url));
+    }
+  };
   
   // Simple URL validation
   const validateUrl = (urlString: string) => {
@@ -63,27 +86,22 @@ export default function HomePage() {
 
   const isURL = (str: string): boolean => isLikelyUrl(str);
 
-  const styles = [
-    { id: "1", name: "Glassmorphism", description: "Frosted glass effect" },
-    { id: "2", name: "Neumorphism", description: "Soft 3D shadows" },
-    { id: "3", name: "Brutalism", description: "Bold and raw" },
-    { id: "4", name: "Minimalist", description: "Clean and simple" },
-    { id: "5", name: "Dark Mode", description: "Dark theme design" },
-    { id: "6", name: "Gradient Rich", description: "Vibrant gradients" },
-    { id: "7", name: "3D Depth", description: "Dimensional layers" },
-    { id: "8", name: "Retro Wave", description: "80s inspired" },
-  ];
-
-  const models = appConfig.ai.availableModels.map(model => ({
-    id: model,
-    name: appConfig.ai.modelDisplayNames[model] || model,
-  }));
-
   const handleSubmit = async (selectedResult?: SearchResult) => {
     const inputValue = url.trim();
 
     if (!inputValue) {
-      toast.error("Please enter a URL or search term");
+      toast.error(firecrawlEnabled ? "Please enter a URL or search term" : "Please describe what you want to build");
+      return;
+    }
+
+    if (!firecrawlEnabled) {
+      sessionStorage.setItem('directPrompt', inputValue);
+      sessionStorage.setItem('directPromptMode', 'true');
+      sessionStorage.setItem('selectedModel', selectedModel);
+      sessionStorage.setItem('autoStart', 'true');
+      sessionStorage.removeItem('selectedStyle');
+      sessionStorage.removeItem('additionalInstructions');
+      router.push('/generation');
       return;
     }
 
@@ -100,7 +118,6 @@ export default function HomePage() {
       // Wait for fade animation
       setTimeout(() => {
         sessionStorage.setItem('targetUrl', selectedResult.url);
-        sessionStorage.setItem('selectedStyle', selectedStyle);
         sessionStorage.setItem('selectedModel', selectedModel);
         sessionStorage.setItem('autoStart', 'true');
         if (selectedResult.markdown) {
@@ -124,7 +141,6 @@ export default function HomePage() {
       } else {
         // Normal clone mode
         sessionStorage.setItem('targetUrl', inputValue);
-        sessionStorage.setItem('selectedStyle', selectedStyle);
         sessionStorage.setItem('selectedModel', selectedModel);
         sessionStorage.setItem('autoStart', 'true');
         router.push('/generation');
@@ -266,15 +282,21 @@ export default function HomePage() {
               <HomeHeroBadge />
               <HomeHeroTitle />
               <p className="text-center text-body-large">
-                Clone brand format or re-imagine any website, in seconds.
+                {firecrawlEnabled
+                  ? 'Clone brand format or re-imagine any website, in seconds.'
+                  : 'Describe an app and generate it from scratch, in seconds.'}
               </p>
-              <Link
-                className="bg-black-alpha-4 hover:bg-black-alpha-6 rounded-6 px-8 lg:px-6 text-label-large h-30 lg:h-24 block mt-8 mx-auto w-max gap-4 transition-all"
-                href="#"
-                onClick={(e) => e.preventDefault()}
+              <button
+                type="button"
+                className={`rounded-6 px-8 lg:px-6 text-label-large h-30 lg:h-24 block mt-8 mx-auto w-max gap-4 transition-all ${
+                  firecrawlEnabled
+                    ? 'bg-black-alpha-4 hover:bg-black-alpha-6'
+                    : 'bg-heat-100 hover:bg-heat-200 text-accent-white'
+                }`}
+                onClick={toggleFirecrawl}
               >
-                Powered by Firecrawl.
-              </Link>
+                {firecrawlEnabled ? 'Powered by Firecrawl' : 'Firecrawl off · prompt mode'}
+              </button>
             </div>
           </div>
 
@@ -298,7 +320,7 @@ export default function HomePage() {
                   }}
                 >
 
-                <div className="p-[28px] flex gap-12 items-center w-full relative bg-white rounded-20">
+                <div className={`p-[28px] flex gap-12 w-full relative bg-white rounded-20 ${firecrawlEnabled ? 'items-center' : 'items-start'}`}>
                   {/* Show different UI when search results are displayed */}
                   {hasSearched && searchResults.length > 0 && !isFadingOut ? (
                     <>
@@ -352,7 +374,8 @@ export default function HomePage() {
                     </>
                   ) : (
                     <>
-                      {isURL(url) ? (
+                      {firecrawlEnabled ? (
+                        isURL(url) ? (
                         // Scrape icon for URLs
                         <svg 
                           width="20" 
@@ -365,7 +388,7 @@ export default function HomePage() {
                           <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
                           <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                      ) : (
+                        ) : (
                         // Search icon for search terms
                         <svg 
                           width="20" 
@@ -378,7 +401,21 @@ export default function HomePage() {
                           <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
                           <path d="M12.5 12.5L16.5 16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
+                        )
+                      ) : (
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="opacity-40 flex-shrink-0 mt-2"
+                        >
+                          <path d="M4 16L5.5 11.5L12.5 4.5C13.3284 3.67157 14.6716 3.67157 15.5 4.5C16.3284 5.32843 16.3284 6.67157 15.5 7.5L8.5 14.5L4 16Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M11.5 5.5L14.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
                       )}
+                      {firecrawlEnabled ? (
                       <input
                         className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"
                         placeholder="Enter URL or search term..."
@@ -408,6 +445,24 @@ export default function HomePage() {
                           }
                         }}
                       />
+                      ) : (
+                      <textarea
+                        className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[48px] leading-6"
+                        placeholder="Describe what you want to build..."
+                        value={url}
+                        rows={2}
+                        onChange={(e) => {
+                          setUrl(e.target.value);
+                          setIsValidUrl(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmit();
+                          }
+                        }}
+                      />
+                      )}
                       <div
                         onClick={(e) => {
                           e.preventDefault();
@@ -415,11 +470,17 @@ export default function HomePage() {
                             handleSubmit();
                           }
                         }}
-                        className={isSearching ? 'pointer-events-none' : ''}
+                        className={`${isSearching ? 'pointer-events-none' : ''} ${!firecrawlEnabled ? 'self-end' : ''}`}
                       >
                         <HeroInputSubmitButton 
                           dirty={url.length > 0} 
-                          buttonText={isURL(url) ? 'Scrape Site' : 'Search'} 
+                          buttonText={
+                            !firecrawlEnabled
+                              ? 'Generate'
+                              : isURL(url)
+                                ? 'Scrape Site'
+                                : 'Search'
+                          } 
                           disabled={isSearching}
                         />
                       </div>
@@ -427,13 +488,67 @@ export default function HomePage() {
                   )}
                 </div>
 
-                {/* Options Section - Only show when valid URL */}
+                <div className="px-[28px] pb-[16px]">
+                  <div className="border-t border-gray-100">
+                    <div
+                      className="py-8 grid grid-cols-2 items-center gap-12 group cursor-pointer"
+                      onClick={toggleFirecrawl}
+                    >
+                      <div className="flex select-none">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black">
+                            Use Firecrawl
+                          </div>
+                          <div className="text-[11px] text-black-alpha-48 mt-2">
+                            {firecrawlEnabled
+                              ? 'Search and clone websites'
+                              : 'Write a prompt and generate from scratch'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          className="transition-all relative rounded-full group bg-black-alpha-10"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFirecrawl();
+                          }}
+                          aria-pressed={firecrawlEnabled}
+                          aria-label={firecrawlEnabled ? 'Disable Firecrawl' : 'Enable Firecrawl'}
+                          style={{
+                            width: '50px',
+                            height: '20px',
+                            boxShadow: 'rgba(0, 0, 0, 0.02) 0px 6px 12px 0px inset, rgba(0, 0, 0, 0.02) 0px 0.75px 0.75px 0px inset, rgba(0, 0, 0, 0.04) 0px 0.25px 0.25px 0px inset'
+                          }}
+                        >
+                          <div
+                            className={`overlay transition-opacity ${firecrawlEnabled ? 'opacity-100' : 'opacity-0'}`}
+                            style={{ background: 'color(display-p3 0.9059 0.3294 0.0784)', backgroundColor: '#FA4500' }}
+                          />
+                          <div
+                            className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
+                            style={{
+                              width: '28px',
+                              height: '16px',
+                              boxShadow: 'rgba(0, 0, 0, 0.06) 0px 6px 12px -3px, rgba(0, 0, 0, 0.06) 0px 3px 6px -1px, rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.08) 0px 0.5px 0.5px 0px',
+                              transform: firecrawlEnabled ? 'translateX(16px)' : 'none'
+                            }}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Options Section - brand extension when cloning a URL */}
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[300px]') + ' opacity-100' : 'max-h-0 opacity-0'
+                  firecrawlEnabled && isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[80px]') + ' opacity-100' : 'max-h-0 opacity-0'
                 }`}>
                   <div className="px-[28px] pt-0 pb-[28px]">
-                    <div className="border-t border-gray-100 bg-white">
-                      {/* Extend Brand Styles Toggle */}
+                    <div className="bg-white">
+                      {firecrawlEnabled && (
+                      <>
                       <div className={`transition-all duration-300 transform ${
                         isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
                       }`} style={{ transitionDelay: '50ms' }}>
@@ -477,7 +592,6 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      {/* Brand Extension Prompt - Show when toggle is enabled */}
                       {extendBrandStyles && (
                         <div className="pb-10 transition-all duration-300 opacity-100">
                           <textarea
@@ -488,69 +602,8 @@ export default function HomePage() {
                           />
                         </div>
                       )}
-
-                      {/* Style Selector - Hide when brand extension mode is enabled */}
-                      {!extendBrandStyles && (
-                        <div className={`mb-2 transition-all duration-300 transform ${
-                          isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                        }`} style={{ transitionDelay: '100ms' }}>
-                          <div className="grid grid-cols-4 gap-2">
-                            {styles.map((style, index) => (
-                              <button
-                                key={style.id}
-                                onClick={() => setSelectedStyle(style.id)}
-                                className={`
-                                  ${selectedStyle === style.id
-                                    ? 'bg-heat-100 hover:bg-heat-200 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 text-accent-white active:scale-[0.995] border-0'
-                                    : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700 py-3.5 px-4 rounded text-xs font-medium border text-center'
-                                  }
-                                  transition-all
-                                  ${isValidUrl ? 'opacity-100' : 'opacity-0'}
-                                `}
-                                style={{
-                                  transitionDelay: `${150 + index * 30}ms`,
-                                  transition: 'all 0.3s ease-in-out'
-                                }}
-                              >
-                                {selectedStyle === style.id && (
-                                  <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />
-                                )}
-                                <span className={selectedStyle === style.id ? 'relative' : ''}>
-                                  {style.name}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                      </>
                       )}
-
-                      {/* Model Selector Dropdown and Additional Instructions */}
-                      <div className={`flex items-center gap-3 mt-2 pb-4 transition-all duration-300 transform ${
-                        isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                      }`} style={{ transitionDelay: '400ms' }}>
-                        {/* Model Dropdown */}
-                        <select
-                          value={selectedModel}
-                          onChange={(e) => setSelectedModel(e.target.value)}
-                          className={`px-3 py-2.5 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 ${extendBrandStyles ? 'flex-1' : ''}`}
-                        >
-                          {models.map((model) => (
-                            <option key={model.id} value={model.id}>
-                              {model.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Additional Instructions - Hidden when extend brand styles is enabled */}
-                        {!extendBrandStyles && (
-                          <input
-                            type="text"
-                            className="flex-1 px-3 py-2.5 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400"
-                            placeholder="Additional instructions (optional)"
-                            onChange={(e) => sessionStorage.setItem('additionalInstructions', e.target.value)}
-                          />
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -566,7 +619,7 @@ export default function HomePage() {
         </section>
 
         {/* Full-width oval carousel section */}
-        {showSearchTiles && hasSearched && (
+        {firecrawlEnabled && showSearchTiles && hasSearched && (
           <section className={`carousel-section relative w-full overflow-hidden mt-32 mb-32 transition-opacity duration-500 ${
             isFadingOut ? 'opacity-0' : 'opacity-100'
           }`}>

@@ -108,6 +108,7 @@ function AISandboxPage() {
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [hasInitialSubmission, setHasInitialSubmission] = useState<boolean>(false);
   const [fileStructure, setFileStructure] = useState<string>('');
+  const [directPromptMode, setDirectPromptMode] = useState(false);
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -176,28 +177,12 @@ function AISandboxPage() {
       const storedStyle = templateParam || sessionStorage.getItem('selectedStyle');
       const storedModel = sessionStorage.getItem('selectedModel');
       const storedInstructions = sessionStorage.getItem('additionalInstructions');
-      
-      if (storedUrl) {
-        // Mark that we have an initial submission since we're loading with a URL
-        setHasInitialSubmission(true);
-        
-        // Clear sessionStorage after reading  
-        sessionStorage.removeItem('targetUrl');
-        sessionStorage.removeItem('selectedStyle');
-        sessionStorage.removeItem('selectedModel');
-        sessionStorage.removeItem('additionalInstructions');
-        // Note: Don't clear siteMarkdown here, it will be cleared when used
-        
-        // Set the values in the component state
-        setHomeUrlInput(storedUrl);
-        setSelectedStyle(storedStyle || 'modern');
-        
-        // Add details to context if provided
+      const storedDirectPrompt = sessionStorage.getItem('directPrompt');
+
+      const applyStoredStyleContext = () => {
         if (detailsParam) {
           setHomeContextInput(detailsParam);
         } else if (storedStyle && !urlParam) {
-          // Only apply stored style if no screenshot URL is provided
-          // This prevents unwanted style inheritance when using screenshot search
           const styleNames: Record<string, string> = {
             '1': 'Glassmorphism',
             '2': 'Neumorphism',
@@ -215,17 +200,52 @@ function AISandboxPage() {
           const styleName = styleNames[storedStyle] || storedStyle;
           let contextString = `${styleName} style design`;
           
-          // Add additional instructions if provided
           if (storedInstructions) {
             contextString += `. ${storedInstructions}`;
           }
           
           setHomeContextInput(contextString);
         } else if (storedInstructions && !urlParam) {
-          // Apply only instructions if no style but instructions are provided
-          // and no screenshot URL is provided
           setHomeContextInput(storedInstructions);
         }
+      };
+      
+      if (storedDirectPrompt) {
+        setHasInitialSubmission(true);
+        sessionStorage.removeItem('directPrompt');
+        sessionStorage.removeItem('selectedStyle');
+        sessionStorage.removeItem('selectedModel');
+        sessionStorage.removeItem('additionalInstructions');
+
+        setDirectPromptMode(true);
+        setHomeUrlInput(storedDirectPrompt);
+        setSelectedStyle(storedStyle || 'modern');
+        applyStoredStyleContext();
+
+        if (storedModel) {
+          setAiModel(storedModel);
+        }
+
+        setShowHomeScreen(false);
+        setHomeScreenFading(false);
+        setShouldAutoGenerate(true);
+        sessionStorage.setItem('autoStart', 'true');
+        sessionStorage.setItem('directPromptMode', 'true');
+      } else if (storedUrl) {
+        // Mark that we have an initial submission since we're loading with a URL
+        setHasInitialSubmission(true);
+        
+        // Clear sessionStorage after reading  
+        sessionStorage.removeItem('targetUrl');
+        sessionStorage.removeItem('selectedStyle');
+        sessionStorage.removeItem('selectedModel');
+        sessionStorage.removeItem('additionalInstructions');
+        // Note: Don't clear siteMarkdown here, it will be cleared when used
+        
+        // Set the values in the component state
+        setHomeUrlInput(storedUrl);
+        setSelectedStyle(storedStyle || 'modern');
+        applyStoredStyleContext();
         
         if (storedModel) {
           setAiModel(storedModel);
@@ -261,7 +281,7 @@ function AISandboxPage() {
 
       // Only start cloning when we arrived from the home search/select flow.
       // Do not create an empty sandbox just by visiting /generation.
-      if (storedUrl && isMounted) {
+      if ((storedUrl || storedDirectPrompt) && isMounted) {
         sessionStorage.setItem('autoStart', 'true');
       }
     };
@@ -292,14 +312,14 @@ function AISandboxPage() {
   
   // Start capturing screenshot if URL is provided on mount (from home screen)
   useEffect(() => {
-    if (!showHomeScreen && homeUrlInput && !urlScreenshot && !isCapturingScreenshot) {
+    if (!showHomeScreen && homeUrlInput && !urlScreenshot && !isCapturingScreenshot && !directPromptMode) {
       let screenshotUrl = homeUrlInput.trim();
       if (!screenshotUrl.match(/^https?:\/\//i)) {
         screenshotUrl = 'https://' + screenshotUrl;
       }
       captureUrlScreenshot(screenshotUrl);
     }
-  }, [showHomeScreen, homeUrlInput]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showHomeScreen, homeUrlInput, directPromptMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-start generation if flagged
   useEffect(() => {
@@ -2602,12 +2622,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
   const startGeneration = async () => {
     if (!homeUrlInput.trim()) return;
+
+    const isDirectPrompt = directPromptMode || sessionStorage.getItem('directPromptMode') === 'true';
+    if (isDirectPrompt) {
+      sessionStorage.removeItem('directPromptMode');
+    }
     
     setHomeScreenFading(true);
     
     // Set immediate loading state for better UX
     setIsStartingNewGeneration(true);
-    setLoadingStage('gathering');
+    setLoadingStage(isDirectPrompt ? 'planning' : 'gathering');
     
     // Immediately switch to preview tab to show loading
     setActiveTab('preview');
@@ -2618,7 +2643,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     // Clear messages and immediately show the initial message
     setChatMessages([]);
     let displayUrl = homeUrlInput.trim();
-    if (!displayUrl.match(/^https?:\/\//i)) {
+    if (!isDirectPrompt && !displayUrl.match(/^https?:\/\//i)) {
       displayUrl = 'https://' + displayUrl;
     }
     // Remove protocol for cleaner display
@@ -2627,24 +2652,29 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     // Check if we're in brand extension mode
     const brandExtensionMode = sessionStorage.getItem('brandExtensionMode') === 'true';
 
-    addChatMessage(
-      brandExtensionMode
-        ? `Analyzing brand from ${cleanUrl}...`
-        : `Starting to clone ${cleanUrl}...`,
-      'system'
-    );
+    if (isDirectPrompt) {
+      addChatMessage(homeUrlInput.trim(), 'user');
+      addChatMessage('Creating a sandbox and generating your app from the prompt...', 'system');
+    } else {
+      addChatMessage(
+        brandExtensionMode
+          ? `Analyzing brand from ${cleanUrl}...`
+          : `Starting to clone ${cleanUrl}...`,
+        'system'
+      );
+    }
     
     // Start creating sandbox and capturing screenshot immediately in parallel
     const sandboxPromise = !sandboxData ? createSandbox(true) : Promise.resolve(null);
     
     // Set loading stage immediately before hiding home screen
-    setLoadingStage('gathering');
+    setLoadingStage(isDirectPrompt ? 'planning' : 'gathering');
     // Also ensure we're on preview tab to show the loading overlay
     setActiveTab('preview');
     
-    // Always capture screenshot for new URLs, even if sandbox exists
-    // This ensures the loading screen shows properly
-    captureUrlScreenshot(displayUrl);
+    if (!isDirectPrompt) {
+      captureUrlScreenshot(displayUrl);
+    }
     
     setTimeout(async () => {
       setShowHomeScreen(false);
@@ -2659,14 +2689,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       const createdSandbox = await sandboxPromise;
       
       // Now start the clone process which will stream the generation
-      setUrlInput(homeUrlInput);
+      setUrlInput(isDirectPrompt ? '' : homeUrlInput);
       setUrlOverlayVisible(false); // Make sure overlay is closed
-      setUrlStatus(['Scraping website content...']);
+      setUrlStatus(isDirectPrompt ? ['Planning your app...', 'Generating React app...'] : ['Scraping website content...']);
       
       try {
         // Scrape the website
         let url = homeUrlInput.trim();
-        if (!url.match(/^https?:\/\//i)) {
+        if (!isDirectPrompt && !url.match(/^https?:\/\//i)) {
           url = 'https://' + url;
         }
 
@@ -2679,7 +2709,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         let scrapeData: ScrapeData | undefined;
         let brandGuidelines: any;
 
-        if (brandExtensionMode) {
+        if (isDirectPrompt) {
+          addChatMessage('Generating a React app from your prompt...', 'system');
+        } else if (brandExtensionMode) {
           // === BRAND EXTENSION MODE ===
           addChatMessage('Extracting brand styles from the website...', 'system');
 
@@ -2748,7 +2780,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         }
         }
 
-        setUrlStatus(brandExtensionMode ? ['Brand styles extracted!', 'Building your component...'] : ['Website scraped successfully!', 'Generating React app...']);
+        setUrlStatus(
+          isDirectPrompt
+            ? ['Prompt ready!', 'Generating React app...']
+            : brandExtensionMode
+              ? ['Brand styles extracted!', 'Building your component...']
+              : ['Website scraped successfully!', 'Generating React app...']
+        );
 
         // Clear preparing design state and switch to generation tab
         setIsPreparingDesign(false);
@@ -2768,7 +2806,34 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // Build the appropriate prompt based on mode
         let prompt;
 
-        if (brandExtensionMode && brandGuidelines) {
+        if (isDirectPrompt) {
+          setConversationContext(prev => ({
+            ...prev,
+            currentProject: homeUrlInput.trim().slice(0, 80)
+          }));
+
+          prompt = `Build a complete React application from scratch based on this user request.
+
+USER REQUEST:
+${homeUrlInput.trim()}
+
+${homeContextInput ? `ADDITIONAL CONTEXT/REQUIREMENTS FROM USER:
+${homeContextInput}
+
+Please incorporate these requirements into the design and implementation.` : ''}
+
+IMPORTANT INSTRUCTIONS:
+- Create a COMPLETE, working React application
+- Use Tailwind CSS for all styling (no custom CSS files)
+- Make it responsive and modern
+- Create proper component structure
+- Make sure the app actually renders visible content
+- Create ALL components that you reference in imports
+- Do not clone or scrape any existing website
+- App.jsx should render the main application UI
+
+Focus on building a polished, functional app that matches the request.`;
+        } else if (brandExtensionMode && brandGuidelines) {
           // === BRAND EXTENSION PROMPT ===
           // Store brand guidelines in conversation context
           setConversationContext(prev => ({
@@ -3179,13 +3244,15 @@ Focus on the key sections and content, making it clean and modern.`;
           await applyGeneratedCode(generatedCode, false);
 
           addChatMessage(
-            brandExtensionMode
+            isDirectPrompt
+              ? `Successfully built your app from the prompt${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}. You can now ask me to modify it or add more features.`
+              : brandExtensionMode
               ? `Successfully built your custom component using ${cleanUrl}'s brand guidelines! You can now ask me to modify it or add more features.`
               : `Successfully recreated ${url} as a modern React app${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}! The scraped content is now in my context, so you can ask me to modify specific sections or add features based on the original site.`,
             'ai',
             {
-              scrapedUrl: url,
-              scrapedContent: brandExtensionMode ? { brandGuidelines } : scrapeData,
+              scrapedUrl: isDirectPrompt ? undefined : url,
+              scrapedContent: isDirectPrompt ? undefined : (brandExtensionMode ? { brandGuidelines } : scrapeData),
               generatedCode: generatedCode
             }
           );
@@ -3229,7 +3296,7 @@ Focus on the key sections and content, making it clean and modern.`;
           setActiveTab('preview');
         }, 1000); // Show completion briefly then switch
       } catch (error: any) {
-        addChatMessage(`Failed to clone website: ${error.message}`, 'system');
+        addChatMessage(`Failed to generate: ${error.message}`, 'system');
         setUrlStatus([]);
         setIsPreparingDesign(false);
         setIsStartingNewGeneration(false); // Clear new generation flag on error
