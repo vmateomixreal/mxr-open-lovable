@@ -1,5 +1,7 @@
 import { Sandbox } from '@vercel/sandbox';
 import { SandboxProvider, SandboxInfo, CommandResult } from '../types';
+import { getVercelSandboxAuth } from '../vercel-auth';
+import { appConfig } from '@/config/app.config';
 // SandboxProviderConfig available through parent class
 
 export class VercelProvider extends SandboxProvider {
@@ -24,19 +26,11 @@ export class VercelProvider extends SandboxProvider {
       // Create Vercel sandbox
       
       const sandboxConfig: any = {
-        timeout: 300000, // 5 minutes in ms
-        runtime: 'node22', // Use node22 runtime for Vercel sandboxes
-        ports: [5173] // Vite port
+        timeout: appConfig.vercelSandbox.timeoutMs,
+        runtime: appConfig.vercelSandbox.runtime,
+        ports: [5173], // Vite port
+        ...getVercelSandboxAuth()
       };
-
-      // Add authentication based on environment variables
-      if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
-        sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
-        sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
-        sandboxConfig.token = process.env.VERCEL_TOKEN;
-      } else if (process.env.VERCEL_OIDC_TOKEN) {
-        sandboxConfig.oidcToken = process.env.VERCEL_OIDC_TOKEN;
-      }
 
       this.sandbox = await Sandbox.create(sandboxConfig);
       
@@ -372,14 +366,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts: [
-      '.vercel.run',  // Allow all Vercel sandbox domains
-      '.e2b.dev',     // Allow all E2B sandbox domains
+      '.vercel.run',
+      '.e2b.dev',
       'localhost'
     ],
-    hmr: {
-      clientPort: 443,
-      protocol: 'wss'
-    }
+    hmr: false
   }
 })`;
     
@@ -514,26 +505,9 @@ body {
     // Start Vite dev server
     // Starting Vite dev server
     
-    // Kill any existing Vite processes
-    await this.sandbox.runCommand({
-      cmd: 'sh',
-      args: ['-c', 'pkill -f vite || true'],
-      cwd: '/'
-    });
+    await this.startViteServer();
+    await this.waitForPreviewReady();
     
-    // Start Vite in background
-    await this.sandbox.runCommand({
-      cmd: 'sh',
-      args: ['-c', 'nohup npm run dev > /tmp/vite.log 2>&1 &'],
-      cwd: '/vercel/sandbox'
-    });
-    
-    // Vite server started in background
-    
-    // Wait for Vite to be ready
-    await new Promise(resolve => setTimeout(resolve, 7000));
-    
-    // Track initial files
     this.existingFiles.add('src/App.jsx');
     this.existingFiles.add('src/main.jsx');
     this.existingFiles.add('src/index.css');
@@ -551,27 +525,53 @@ body {
 
     // Restarting Vite server
     
-    // Kill existing Vite process
     await this.sandbox.runCommand({
       cmd: 'sh',
       args: ['-c', 'pkill -f vite || true'],
       cwd: '/'
     });
-    
-    // Wait a moment
+
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Start Vite in background
+    await this.startViteServer();
+    await this.waitForPreviewReady();
+  }
+
+  private async startViteServer(): Promise<void> {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
     await this.sandbox.runCommand({
-      cmd: 'sh',
-      args: ['-c', 'nohup npm run dev > /tmp/vite.log 2>&1 &'],
-      cwd: '/vercel/sandbox'
+      cmd: 'npm',
+      args: ['run', 'dev'],
+      cwd: '/vercel/sandbox',
+      detached: true,
     });
-    
-    // Vite server started in background
-    
-    // Wait for Vite to be ready
-    await new Promise(resolve => setTimeout(resolve, 7000));
+  }
+
+  private async waitForPreviewReady(timeoutMs = 40000): Promise<void> {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    const previewUrl = this.sandbox.domain(5173);
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < timeoutMs) {
+      try {
+        const response = await fetch(previewUrl, { method: 'GET', redirect: 'follow' });
+        if (response.status !== 502) {
+          console.log(`[VercelProvider] Preview is listening at ${previewUrl}`);
+          return;
+        }
+      } catch {
+        // Vite is still booting
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
+    console.warn(`[VercelProvider] Preview did not become ready before timeout: ${previewUrl}`);
   }
 
   getSandboxUrl(): string | null {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
+import { isLikelyUrl } from "@/lib/url";
 
 interface HeroInputProps {
   value: string;
@@ -9,12 +10,6 @@ interface HeroInputProps {
   placeholder?: string;
   className?: string;
   showSearchFeatures?: boolean;
-}
-
-function isURL(str: string): boolean {
-  // Check if string contains a dot and looks like a URL
-  const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-  return urlPattern.test(str.trim());
 }
 
 export default function HeroInput({ 
@@ -28,7 +23,7 @@ export default function HeroInput({
   const [isFocused, setIsFocused] = useState(false);
   const [showTiles, setShowTiles] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isURLInput = showSearchFeatures ? isURL(value) : false;
+  const isURLInput = showSearchFeatures ? isLikelyUrl(value) : false;
 
   // Reset textarea height when value changes (especially when cleared)
   useEffect(() => {
@@ -38,7 +33,7 @@ export default function HeroInput({
     }
     
     // Show tiles animation for search terms (only if search features are enabled)
-    if (showSearchFeatures && value.trim() && !isURL(value) && isFocused) {
+    if (showSearchFeatures && value.trim() && !isLikelyUrl(value) && isFocused) {
       setShowTiles(true);
     } else {
       setShowTiles(false);

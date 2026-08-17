@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Sandbox } from '@vercel/sandbox';
 import type { SandboxState } from '@/types/sandbox';
 import { appConfig } from '@/config/app.config';
+import { getVercelSandboxAuth } from '@/lib/sandbox/vercel-auth';
 
 // Store active sandbox globally
 declare global {
@@ -89,24 +90,18 @@ async function createSandboxInternal() {
     // Create Vercel sandbox with flexible authentication
     console.log(`[create-ai-sandbox] Creating Vercel sandbox with ${appConfig.vercelSandbox.timeoutMinutes} minute timeout...`);
     
-    // Prepare sandbox configuration
     const sandboxConfig: any = {
       timeout: appConfig.vercelSandbox.timeoutMs,
       runtime: appConfig.vercelSandbox.runtime,
-      ports: [appConfig.vercelSandbox.devPort]
+      ports: [appConfig.vercelSandbox.devPort],
+      ...getVercelSandboxAuth()
     };
-    
-    // Add authentication parameters if using personal access token
-    if (process.env.VERCEL_TOKEN && process.env.VERCEL_TEAM_ID && process.env.VERCEL_PROJECT_ID) {
-      console.log('[create-ai-sandbox] Using personal access token authentication');
-      sandboxConfig.teamId = process.env.VERCEL_TEAM_ID;
-      sandboxConfig.projectId = process.env.VERCEL_PROJECT_ID;
-      sandboxConfig.token = process.env.VERCEL_TOKEN;
-    } else if (process.env.VERCEL_OIDC_TOKEN) {
-      console.log('[create-ai-sandbox] Using OIDC token authentication');
-    } else {
-      console.log('[create-ai-sandbox] No authentication found - relying on default Vercel authentication');
-    }
+
+    console.log(
+      '[create-ai-sandbox] Using',
+      'token' in sandboxConfig ? 'personal access token' : 'OIDC token',
+      'authentication'
+    );
     
     sandbox = await Sandbox.create(sandboxConfig);
     
@@ -138,7 +133,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: ${appConfig.vercelSandbox.devPort},
     strictPort: true,
-    hmr: true,
+    hmr: false,
     allowedHosts: [
       'localhost',
       '127.0.0.1',

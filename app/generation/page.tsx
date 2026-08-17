@@ -163,11 +163,8 @@ function AISandboxPage() {
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
     let isMounted = true;
-    let sandboxCreated = false; // Track if sandbox was created in this effect
 
     const initializePage = async () => {
-      // Prevent double execution in React StrictMode
-      if (sandboxCreated) return;
       
       // First check URL parameters (from home page navigation)
       const urlParam = searchParams.get('url');
@@ -262,38 +259,10 @@ function AISandboxPage() {
       
       if (!isMounted) return;
 
-      // Check if sandbox ID is in URL
-      const sandboxIdParam = searchParams.get('sandbox');
-      
-      setLoading(true);
-      try {
-        if (sandboxIdParam) {
-          console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
-          // For now, just create a new sandbox - you could enhance this to actually restore
-          // the specific sandbox if your backend supports it
-          sandboxCreated = true;
-          await createSandbox(true);
-        } else {
-          console.log('[home] No sandbox in URL, creating new sandbox automatically...');
-          sandboxCreated = true;
-          await createSandbox(true);
-        }
-        
-        // If we have a URL from the home page, mark for automatic start
-        if (storedUrl && isMounted) {
-          // We'll trigger the generation after the component is fully mounted
-          // and the startGeneration function is defined
-          sessionStorage.setItem('autoStart', 'true');
-        }
-      } catch (error) {
-        console.error('[ai-sandbox] Failed to create or restore sandbox:', error);
-        if (isMounted) {
-          addChatMessage('Failed to create or restore sandbox.', 'error');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+      // Only start cloning when we arrived from the home search/select flow.
+      // Do not create an empty sandbox just by visiting /generation.
+      if (storedUrl && isMounted) {
+        sessionStorage.setItem('autoStart', 'true');
       }
     };
     
@@ -1468,7 +1437,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     ))}
                     
                     {/* Show remaining raw stream if there's content after the last file */}
-                    {!generationProgress.currentFile && generationProgress.streamedCode.length > 0 && (
+                    {!generationProgress.currentFile && generationProgress.isGenerating && generationProgress.streamedCode.length > 0 && (
                       <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
                         <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { appConfig } from '@/config/app.config';
+import { isLikelyUrl } from '@/lib/url';
 import { toast } from "sonner";
 
 // Import shared components
@@ -61,11 +61,7 @@ export default function HomePage() {
     return urlPattern.test(urlString.toLowerCase());
   };
 
-  // Check if input is a URL (contains a dot)
-  const isURL = (str: string): boolean => {
-    const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
-    return urlPattern.test(str.trim());
-  };
+  const isURL = (str: string): boolean => isLikelyUrl(str);
 
   const styles = [
     { id: "1", name: "Glassmorphism", description: "Frosted glass effect" },
@@ -206,11 +202,18 @@ export default function HomePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.results || []);
+        const results = data.results || [];
+        setSearchResults(results);
         setShowSearchTiles(true);
+        if (results.length === 0) {
+          toast.error('No websites found. Try a different search.');
+        }
+      } else {
+        toast.error('Search failed. Check your Firecrawl API key and try again.');
       }
     } catch (error) {
       console.error('Search error:', error);
+      toast.error('Search failed. Please try again.');
     } finally {
       setIsSearching(false);
     }
@@ -786,11 +789,10 @@ export default function HomePage() {
                       
                       {result.screenshot ? (
                         <div className="relative w-full h-full">
-                          <Image 
-                            src={result.screenshot} 
+                          <img
+                            src={result.screenshot}
                             alt={result.title}
-                            fill
-                            className="object-cover object-top"
+                            className="absolute inset-0 w-full h-full object-cover object-top"
                             loading="lazy"
                           />
                         </div>

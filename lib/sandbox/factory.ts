@@ -1,6 +1,7 @@
 import { SandboxProvider, SandboxProviderConfig } from './types';
 import { E2BProvider } from './providers/e2b-provider';
 import { VercelProvider } from './providers/vercel-provider';
+import { hasValidVercelSandboxAuth } from './vercel-auth';
 
 export class SandboxFactory {
   static create(provider?: string, config?: SandboxProviderConfig): SandboxProvider {
@@ -30,9 +31,7 @@ export class SandboxFactory {
         return !!process.env.E2B_API_KEY;
       
       case 'vercel':
-        // Vercel can use OIDC (automatic) or PAT
-        return !!process.env.VERCEL_OIDC_TOKEN || 
-               (!!process.env.VERCEL_TOKEN && !!process.env.VERCEL_TEAM_ID && !!process.env.VERCEL_PROJECT_ID);
+        return hasValidVercelSandboxAuth();
       
       default:
         return false;

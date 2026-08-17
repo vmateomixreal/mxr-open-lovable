@@ -5,7 +5,7 @@ export const appConfig = {
   // Vercel Sandbox Configuration
   vercelSandbox: {
     // Sandbox timeout in minutes
-    timeoutMinutes: 15,
+    timeoutMinutes: 30,
 
     // Convert to milliseconds for Vercel Sandbox API
     get timeoutMs() {
@@ -48,32 +48,26 @@ export const appConfig = {
     workingDirectory: '/home/user/app',
   },
   
-  // AI Model Configuration
+  // AI Model Configuration (all models are served via OpenRouter)
   ai: {
     // Default AI model
-    defaultModel: 'google/gemini-3-pro-preview',
+    defaultModel: 'anthropic/claude-sonnet-4.6',
     
-    // Available models
+    // Available models (OpenRouter slugs)
     availableModels: [
-      'openai/gpt-5',
-      'moonshotai/kimi-k2-instruct-0905',
-      'anthropic/claude-sonnet-4-20250514',
-      'google/gemini-3-pro-preview'
+      'anthropic/claude-sonnet-4.6',
     ],
     
     // Model display names
     modelDisplayNames: {
-      'openai/gpt-5': 'GPT-5',
-      'moonshotai/kimi-k2-instruct-0905': 'Kimi K2 (Groq)',
-      'anthropic/claude-sonnet-4-20250514': 'Sonnet 4',
-      'google/gemini-3-pro-preview': 'Gemini 3 Pro (Preview)'
+      'anthropic/claude-sonnet-4.6': 'Claude Sonnet 4.6',
     } as Record<string, string>,
     
     // Model API configuration
     modelApiConfig: {
-      'moonshotai/kimi-k2-instruct-0905': {
-        provider: 'groq',
-        model: 'moonshotai/kimi-k2-instruct-0905'
+      'anthropic/claude-sonnet-4.6': {
+        provider: 'openrouter',
+        model: 'anthropic/claude-sonnet-4.6'
       }
     },
     
