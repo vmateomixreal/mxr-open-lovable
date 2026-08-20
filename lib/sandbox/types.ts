@@ -51,6 +51,11 @@ export abstract class SandboxProvider {
   abstract getSandboxInfo(): SandboxInfo | null;
   abstract terminate(): Promise<void>;
   abstract isAlive(): boolean;
+
+  /** Write binary content (e.g. uploaded images). Default: utf-8 string write (override for real binary). */
+  async writeBinaryFile(path: string, content: Buffer): Promise<void> {
+    await this.writeFile(path, content.toString('base64'));
+  }
   
   // Optional methods that providers can override
   async setupViteApp(): Promise<void> {

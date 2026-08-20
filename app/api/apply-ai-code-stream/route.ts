@@ -4,6 +4,8 @@ import { parseMorphEdits, applyMorphEditToFile } from '@/lib/morph-fast-apply';
 import type { SandboxState } from '@/types/sandbox';
 import type { ConversationState } from '@/types/conversation';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { forceUploadedLogoIntoApp } from '@/lib/sandbox/force-uploaded-logo';
+import type { UploadedPromptImage } from '@/lib/sandbox/upload-prompt-images';
 
 declare global {
   var conversationState: ConversationState | null;
@@ -263,7 +265,15 @@ function parseAIResponse(response: string): ParsedResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { response, isEdit = false, packages = [], sandboxId } = await request.json();
+    const {
+      response,
+      isEdit = false,
+      packages = [],
+      sandboxId,
+      disableMorph = false,
+      uploadedImages = [],
+      logoSwap = false,
+    } = await request.json();
 
     if (!response) {
       return NextResponse.json({
@@ -277,12 +287,31 @@ export async function POST(request: NextRequest) {
     console.log('[apply-ai-code-stream] Response preview:', response.substring(0, 500));
     console.log('[apply-ai-code-stream] isEdit:', isEdit);
     console.log('[apply-ai-code-stream] packages:', packages);
+    console.log('[apply-ai-code-stream] disableMorph:', disableMorph);
+    console.log('[apply-ai-code-stream] uploadedImages:', Array.isArray(uploadedImages) ? uploadedImages.length : 0);
 
     // Parse the AI response
     const parsed = parseAIResponse(response);
-    const morphEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
-    const morphEdits = morphEnabled ? parseMorphEdits(response) : [];
+    const morphEditsParsed = parseMorphEdits(response);
+    // Prefer full <file> writes when the model is wiring uploaded assets (/uploads/...).
+    // Morph snippets often "succeed" while leaving brand text unchanged for logo swaps.
+    const responseUsesUploadedAssets =
+      /\/uploads\/[^\s"'`)]+/i.test(response) ||
+      /public\/uploads\//i.test(response) ||
+      /assets\/uploads\//i.test(response) ||
+      /userUpload\d+/i.test(response);
+    const morphEnabled = Boolean(
+      isEdit &&
+      process.env.MORPH_API_KEY &&
+      !disableMorph &&
+      !responseUsesUploadedAssets &&
+      !(Array.isArray(uploadedImages) && uploadedImages.length > 0)
+    );
+    const morphEdits = morphEnabled ? morphEditsParsed : [];
     console.log('[apply-ai-code-stream] Morph Fast Apply mode:', morphEnabled);
+    if (!morphEnabled && process.env.MORPH_API_KEY) {
+      console.log('[apply-ai-code-stream] Morph skipped (disableMorph/uploads/images)');
+    }
     if (morphEnabled) {
       console.log('[apply-ai-code-stream] Morph edits found:', morphEdits.length);
     }
@@ -733,6 +762,36 @@ export async function POST(request: NextRequest) {
                 error: (error as Error).message
               });
             }
+          }
+        }
+
+        // If the model faked a logo with fonts, force the real uploaded <img>
+        const uploadedList = Array.isArray(uploadedImages)
+          ? (uploadedImages as UploadedPromptImage[])
+          : [];
+        if ((logoSwap || uploadedList.length > 0) && uploadedList.length > 0 && providerInstance) {
+          try {
+            await sendProgress({
+              type: 'info',
+              message: 'Asegurando que el logo use la imagen subida (no un texto falso)...',
+            });
+            const patched = await forceUploadedLogoIntoApp(providerInstance, uploadedList);
+            if (patched.length) {
+              for (const filePath of patched) {
+                if (results.filesUpdated && !results.filesUpdated.includes(filePath)) {
+                  results.filesUpdated.push(filePath);
+                }
+                if (results.filesCreated && !results.filesCreated.includes(filePath)) {
+                  // already existed; track as updated only
+                }
+              }
+              await sendProgress({
+                type: 'info',
+                message: `Logo real aplicado en: ${patched.join(', ')}`,
+              });
+            }
+          } catch (logoError) {
+            console.error('[apply-ai-code-stream] force logo failed:', logoError);
           }
         }
 

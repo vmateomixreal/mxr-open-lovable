@@ -117,6 +117,16 @@ function AISandboxPage() {
   const [directPromptMode, setDirectPromptMode] = useState(false);
   const [chatImages, setChatImages] = useState<string[]>([]);
   const initialPromptImagesRef = useRef<string[]>([]);
+  const pendingLogoApplyRef = useRef<{
+    disableMorph: boolean;
+    logoSwap: boolean;
+    uploadedImages: Array<{
+      publicUrl: string;
+      modulePath: string;
+      importFromComponents: string;
+      exportName: string;
+    }>;
+  }>({ disableMorph: false, logoSwap: false, uploadedImages: [] });
   
   const [conversationContext, setConversationContext] = useState<{
     scrapedWebsites: Array<{ url: string; content: any; timestamp: Date }>;
@@ -608,13 +618,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // Return the sandbox data so it can be used immediately
         return data;
       } else {
-        throw new Error(data.error || 'Unknown error');
+        throw new Error(data.error || 'Error desconocido al crear el sandbox');
       }
     } catch (error: any) {
       console.error('[createSandbox] Error:', error);
       updateStatus('Error', false);
-      log(`Failed to create sandbox: ${error.message}`, 'error');
-      addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
+      log(`No se pudo crear el sandbox: ${error.message}`, 'error');
+      addChatMessage(`No se pudo crear el sandbox: ${error.message}`, 'system');
+      setScreenshotError(error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -682,7 +693,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           response: code,
           isEdit: isEdit,
           packages: pendingPackages,
-          sandboxId: effectiveSandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
+          sandboxId: effectiveSandboxData?.sandboxId, // Pass the sandbox ID to ensure proper connection
+          disableMorph: pendingLogoApplyRef.current.disableMorph,
+          logoSwap: pendingLogoApplyRef.current.logoSwap,
+          uploadedImages: pendingLogoApplyRef.current.uploadedImages,
         })
       });
       
@@ -1660,6 +1674,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     addChatMessage(message, 'user', images.length ? { images } : undefined);
     setAiChatInput('');
     setChatImages([]);
+    pendingLogoApplyRef.current = {
+      disableMorph: images.length > 0,
+      logoSwap: /(logo|logotipo|cambia|reemplaz|por este|por esta)/i.test(message),
+      uploadedImages: [],
+    };
     
     // Check for special commands
     const lowerMessage = message.toLowerCase().trim();
@@ -1727,6 +1746,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       console.log('[chat] Sending context to AI:');
       console.log('[chat] - sandboxId:', fullContext.sandboxId);
       console.log('[chat] - isEdit:', conversationContext.appliedCode.length > 0);
+    console.log('[chat] - images:', images.length);
       
       const response = await fetch('/api/generate-ai-code-stream', {
         method: 'POST',
@@ -1916,6 +1936,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 } else if (data.type === 'complete') {
                   generatedCode = data.generatedCode;
                   explanation = data.explanation;
+
+                  pendingLogoApplyRef.current = {
+                    disableMorph: Boolean(data.disableMorph) || pendingLogoApplyRef.current.disableMorph,
+                    logoSwap: Boolean(data.logoSwap) || pendingLogoApplyRef.current.logoSwap,
+                    uploadedImages: Array.isArray(data.uploadedImages)
+                      ? data.uploadedImages
+                      : pendingLogoApplyRef.current.uploadedImages,
+                  };
                   
                   // Save the last generated code
                   setConversationContext(prev => ({
@@ -3159,6 +3187,14 @@ Focus on the key sections and content, making it clean and modern.`;
                 } else if (data.type === 'complete') {
                   generatedCode = data.generatedCode;
                   explanation = data.explanation;
+
+                  pendingLogoApplyRef.current = {
+                    disableMorph: Boolean(data.disableMorph) || pendingLogoApplyRef.current.disableMorph,
+                    logoSwap: Boolean(data.logoSwap) || pendingLogoApplyRef.current.logoSwap,
+                    uploadedImages: Array.isArray(data.uploadedImages)
+                      ? data.uploadedImages
+                      : pendingLogoApplyRef.current.uploadedImages,
+                  };
                   
                   // Save the last generated code
                   setConversationContext(prev => ({

@@ -20,7 +20,7 @@ export function isPromptImageFile(file: File) {
 export async function compressImageFile(
   file: File,
   maxSize = 1280,
-  quality = 0.78
+  quality = 0.85
 ): Promise<string> {
   const objectUrl = URL.createObjectURL(file);
 
@@ -42,6 +42,20 @@ export async function compressImageFile(
       throw new Error('Could not read image');
     }
 
+    // Keep transparency for PNG/WebP logos instead of forcing JPEG
+    const preferLossless =
+      file.type === 'image/png' ||
+      file.type === 'image/webp' ||
+      file.type === 'image/gif';
+
+    if (preferLossless) {
+      context.clearRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      return canvas.toDataURL('image/png');
+    }
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
     context.drawImage(image, 0, 0, width, height);
     return canvas.toDataURL('image/jpeg', quality);
   } finally {

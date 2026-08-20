@@ -182,6 +182,37 @@ export class VercelProvider extends SandboxProvider {
     }
   }
 
+  async writeBinaryFile(path: string, content: Buffer): Promise<void> {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    const fullPath = path.startsWith('/') ? path : `/vercel/sandbox/${path}`;
+
+    try {
+      await this.sandbox.writeFiles([{
+        path: fullPath,
+        content,
+      }]);
+      this.existingFiles.add(path);
+    } catch (writeError: any) {
+      console.error(`[VercelProvider] writeBinaryFile failed for ${fullPath}:`, writeError?.message || writeError);
+      const dir = fullPath.substring(0, fullPath.lastIndexOf('/'));
+      if (dir) {
+        await this.sandbox.runCommand({ cmd: 'mkdir', args: ['-p', dir] });
+      }
+      const b64 = content.toString('base64');
+      const result = await this.sandbox.runCommand({
+        cmd: 'python3',
+        args: ['-c', `import base64,pathlib; p=pathlib.Path(${JSON.stringify(fullPath)}); p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(base64.b64decode(${JSON.stringify(b64)}))`],
+      });
+      if (result.exitCode !== 0) {
+        throw new Error(`Failed to write binary file: ${result.stderr || result.stdout}`);
+      }
+      this.existingFiles.add(path);
+    }
+  }
+
   async readFile(path: string): Promise<string> {
     if (!this.sandbox) {
       throw new Error('No active sandbox');

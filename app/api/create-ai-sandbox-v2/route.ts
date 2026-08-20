@@ -3,6 +3,7 @@ import { SandboxFactory } from '@/lib/sandbox/factory';
 // SandboxProvider type is used through SandboxFactory
 import type { SandboxState } from '@/types/sandbox';
 import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import { formatSandboxCreateError } from '@/lib/sandbox/vercel-auth';
 
 // Store active sandbox globally
 declare global {
@@ -92,9 +93,11 @@ export async function POST() {
       global.activeSandboxProvider = null;
     }
     
+    const message = formatSandboxCreateError(error);
+
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : 'Failed to create sandbox',
+        error: message,
         details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }

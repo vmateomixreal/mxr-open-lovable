@@ -136,6 +136,30 @@ export class E2BProvider extends SandboxProvider {
     this.existingFiles.add(path);
   }
 
+  async writeBinaryFile(path: string, content: Buffer): Promise<void> {
+    if (!this.sandbox) {
+      throw new Error('No active sandbox');
+    }
+
+    const fullPath = path.startsWith('/') ? path : `/home/user/app/${path}`;
+
+    if ((this.sandbox as any).files && typeof (this.sandbox as any).files.write === 'function') {
+      await (this.sandbox as any).files.write(fullPath, content);
+    } else {
+      const b64 = content.toString('base64');
+      await this.sandbox.runCode(`
+        import os, base64
+        full_path = ${JSON.stringify(fullPath)}
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, 'wb') as f:
+            f.write(base64.b64decode(${JSON.stringify(b64)}))
+        print(f"✓ Written binary: {full_path}")
+      `);
+    }
+
+    this.existingFiles.add(path);
+  }
+
   async readFile(path: string): Promise<string> {
     if (!this.sandbox) {
       throw new Error('No active sandbox');

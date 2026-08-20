@@ -7,6 +7,12 @@ import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
 import { getLanguageModel } from '@/lib/ai/provider-manager';
+import { sandboxManager } from '@/lib/sandbox/sandbox-manager';
+import {
+  uploadPromptImagesToSandbox,
+  buildUploadedImagesPromptSection,
+  isLogoSwapRequest,
+} from '@/lib/sandbox/upload-prompt-images';
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
@@ -72,6 +78,29 @@ export async function POST(request: NextRequest) {
           typeof image === 'string' && image.startsWith('data:image/')
         )).slice(0, 4)
       : [];
+
+    // Persist uploads in the sandbox so edits can use real <img src="/uploads/..."> paths.
+    // Morph mini-edits cannot embed large base64 images, so this is required for logo swaps.
+    let uploadedPromptImages: Awaited<ReturnType<typeof uploadPromptImagesToSandbox>> = [];
+    if (promptImages.length > 0) {
+      const provider =
+        sandboxManager.getActiveProvider() ||
+        (global as any).activeSandboxProvider ||
+        null;
+      try {
+        uploadedPromptImages = await uploadPromptImagesToSandbox(promptImages, provider);
+        if (uploadedPromptImages.length) {
+          console.log(
+            '[generate-ai-code-stream] Uploaded prompt images:',
+            uploadedPromptImages.map((image) => image.publicUrl).join(', ')
+          );
+        } else {
+          console.warn('[generate-ai-code-stream] Could not upload prompt images to sandbox (no provider or write failed)');
+        }
+      } catch (uploadError) {
+        console.error('[generate-ai-code-stream] Prompt image upload failed:', uploadError);
+      }
+    }
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -901,8 +930,14 @@ CRITICAL: When files are provided in the context:
 4. Do NOT ask to see files - they are already provided in the context above
 5. Make the requested change immediately`;
 
-        // If Morph Fast Apply is enabled (edit mode + MORPH_API_KEY), force <edit> block output
-        const morphFastApplyEnabled = Boolean(isEdit && process.env.MORPH_API_KEY);
+        // Morph Fast Apply is great for tiny text edits, but fails for logo/image swaps
+        // because it cannot write binary assets or large base64 into <update> snippets.
+        const morphFastApplyEnabled = Boolean(
+          isEdit && process.env.MORPH_API_KEY && promptImages.length === 0
+        );
+        if (isEdit && process.env.MORPH_API_KEY && promptImages.length > 0) {
+          console.log('[generate-ai-code-stream] Disabling Morph Fast Apply because prompt images were attached');
+        }
         if (morphFastApplyEnabled) {
           systemPrompt += `
 
@@ -921,6 +956,11 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
 
         // Build full prompt with context
         let fullPrompt = prompt;
+        if (uploadedPromptImages.length) {
+          fullPrompt += `\n\n${buildUploadedImagesPromptSection(uploadedPromptImages, {
+            logoSwap: isLogoSwapRequest(prompt),
+          })}`;
+        }
         if (context) {
           const contextParts = [];
           
@@ -1256,7 +1296,11 @@ ALWAYS write complete code:
 If you're running out of space, generate FEWER files but make them COMPLETE.
 It's better to have 3 complete files than 10 incomplete files.
 
-The user attached ${promptImages.length} reference image(s). Match the visual design, layout, colors, and UI shown in those images.`
+The user attached ${promptImages.length} reference image(s). ${
+                      uploadedPromptImages.length
+                        ? `REAL files are in the project. For any logo/brand replacement you MUST use an <img> with either src="${uploadedPromptImages[0].publicUrl}" or import ${uploadedPromptImages[0].exportName} from '${uploadedPromptImages[0].importFromComponents}'. NEVER redraw the logo with fonts/CSS/SVG text.`
+                        : 'Match the visual design from the images. NEVER fake logos with fonts.'
+                    }${isLogoSwapRequest(prompt) ? ' This is a LOGO SWAP: replace brand text marks with the uploaded image file.' : ''}`
                     },
                     ...promptImages.map((image) => ({
                       type: 'image' as const,
@@ -1735,7 +1779,15 @@ Provide the complete file content without any truncation. Include all necessary 
           components: componentCount,
           model,
           packagesToInstall: packagesToInstall.length > 0 ? packagesToInstall : undefined,
-          warnings: truncationWarnings.length > 0 ? truncationWarnings : undefined
+          warnings: truncationWarnings.length > 0 ? truncationWarnings : undefined,
+          uploadedImages: uploadedPromptImages.map((image) => ({
+            publicUrl: image.publicUrl,
+            modulePath: image.modulePath,
+            importFromComponents: image.importFromComponents,
+            exportName: image.exportName,
+          })),
+          logoSwap: isLogoSwapRequest(prompt),
+          disableMorph: promptImages.length > 0,
         });
         
         // Track edit in conversation history
