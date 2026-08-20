@@ -29,7 +29,7 @@ export function getOpenRouterClient(): OpenAIProvider {
     name: 'openrouter',
     headers: {
       'HTTP-Referer': process.env.OPEN_ROUTER_HTTP_REFERER || 'http://localhost:3000',
-      'X-Title': process.env.OPEN_ROUTER_APP_TITLE || 'Open Lovable',
+      'X-Title': process.env.OPEN_ROUTER_APP_TITLE || 'AI App Builder',
     },
   });
 

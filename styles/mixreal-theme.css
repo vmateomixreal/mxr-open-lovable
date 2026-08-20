@@ -1,0 +1,224 @@
+/* App chrome — editor-inspired UI */
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: var(--accent-black);
+  background-color: #ffffff;
+}
+
+/* Mesh gradient background */
+.meshBg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.meshTint {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+  will-change: opacity;
+  background-image:
+    radial-gradient(at 38% 32%, rgba(46, 155, 255, 0.38) 0px, transparent 38%),
+    radial-gradient(at 58% 58%, rgba(110, 139, 255, 0.38) 0px, transparent 38%),
+    radial-gradient(at 72% 45%, rgba(77, 195, 255, 0.38) 0px, transparent 35%),
+    radial-gradient(at 25% 55%, rgba(110, 139, 255, 0.38) 0px, transparent 38%),
+    radial-gradient(at 85% 70%, rgba(214, 240, 255, 0.38) 0px, transparent 32%);
+  background-size: 220% 220%;
+  animation: mxrMeshMoveGlobal 8s ease-in-out infinite;
+}
+
+@keyframes mxrMeshMoveGlobal {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Scrollbars (Mixreal) */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fdfdfd;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4666fa;
+  border-radius: 8px;
+  border: 3px solid #fdfdfd;
+  min-height: 40px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4B5CF0;
+}
+
+/* Editor-like buttons */
+.mxr-btn {
+  color: #555;
+  background-color: #ddd;
+  border: 0;
+  margin: 0;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: Helvetica, Arial, sans-serif;
+  text-transform: uppercase;
+  cursor: pointer;
+  outline: none;
+}
+
+.mxr-btn:hover {
+  background-color: #fff;
+}
+
+.mxr-btn.selected,
+.mxr-btn-primary {
+  background-color: var(--mxr-blue);
+  color: #fff;
+}
+
+.mxr-btn-primary:hover {
+  background-color: var(--heat-200);
+  color: #fff;
+}
+
+.mxr-tab {
+  background: #fff;
+  color: #222;
+  border: 2px solid var(--mxr-blue);
+  border-radius: 12px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.mxr-tab.selected {
+  background: var(--mxr-blue);
+  color: #fff;
+  font-weight: 550;
+  box-shadow: 0 2px 8px 0 rgba(75, 92, 240, 0.10);
+}
+
+.mxr-tab:not(.selected):hover {
+  background: var(--mxr-blue-soft);
+}
+
+.mxr-panel {
+  background: var(--panel-bg);
+  color: var(--mxr-gray-muted);
+  border-top: 1px solid #ccc;
+}
+
+.mxr-menubar {
+  background: var(--menubar-bg);
+  border-bottom: 1px solid #ccc;
+}
+
+.mxr-input,
+.mxr-select {
+  border: 1px solid transparent;
+  color: #444;
+  font-family: Helvetica, Arial, sans-serif;
+  outline: none;
+}
+
+.mxr-select {
+  color: #666;
+  background-color: #ddd;
+  border: 0;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.mxr-select.normal-case {
+  text-transform: none;
+}
+
+.mxr-select:hover {
+  background-color: #fff;
+}
+
+.mxr-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: none;
+}
+
+/* Soften flame/pixi overlays when present */
+#home-hero .fc-decoration,
+#home-hero canvas {
+  opacity: 0.25;
+  filter: hue-rotate(200deg) saturate(0.7);
+}
+
+/* Loading overlay (editor style) */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  animation: mxr-spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes mxr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.model-item {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+  padding: 24px 12px 16px;
+  color: #222;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: none;
+}
+
+.model-item:hover {
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.14);
+  transform: scale(1.02);
+  background: #f6f8fa;
+}
+
+/* Search result tiles on home */
+#home-hero .rounded-20 {
+  border-radius: 16px;
+}
+
+input, textarea, select, button {
+  font-family: Helvetica, Arial, sans-serif;
+}

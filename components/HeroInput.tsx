@@ -21,7 +21,7 @@ export default function HeroInput({
   value, 
   onChange, 
   onSubmit, 
-  placeholder = "Describe what you want to build...",
+  placeholder = "Describe lo que quieres crear...",
   className = "",
   showSearchFeatures = true,
   allowImages = false,
@@ -192,7 +192,7 @@ export default function HeroInput({
             {canSubmit && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
             {canSubmit ? (
               <>
-                <span className="px-6 relative">Re-imagine Site</span>
+                <span className="px-6 relative">Enviar</span>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 8H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M8.5 3.5L13 8L8.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

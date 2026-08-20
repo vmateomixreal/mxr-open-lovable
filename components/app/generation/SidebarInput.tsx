@@ -24,14 +24,14 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
   // };
 
   const styles = [
-    { id: "1", name: "Glassmorphism", description: "Frosted glass effect" },
-    { id: "2", name: "Neumorphism", description: "Soft 3D shadows" },
-    { id: "3", name: "Brutalism", description: "Bold and raw" },
-    { id: "4", name: "Minimalist", description: "Clean and simple" },
-    { id: "5", name: "Dark Mode", description: "Dark theme design" },
-    { id: "6", name: "Gradient Rich", description: "Vibrant gradients" },
-    { id: "7", name: "3D Depth", description: "Dimensional layers" },
-    { id: "8", name: "Retro Wave", description: "80s inspired" },
+    { id: "1", name: "Glassmorphism", description: "Efecto cristal esmerilado" },
+    { id: "2", name: "Neumorphism", description: "Sombras 3D suaves" },
+    { id: "3", name: "Brutalism", description: "Audaz y crudo" },
+    { id: "4", name: "Minimalist", description: "Limpio y simple" },
+    { id: "5", name: "Dark Mode", description: "Diseño en tema oscuro" },
+    { id: "6", name: "Gradient Rich", description: "Degradados intensos" },
+    { id: "7", name: "3D Depth", description: "Capas dimensionales" },
+    { id: "8", name: "Retro Wave", description: "Inspirado en los 80" },
   ];
 
   const models = appConfig.ai.availableModels.map(model => ({
@@ -58,7 +58,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
          {/* link to home page with button */}
          <Link href="/">
           <button className="w-full px-3 py-2 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
-            Generate a new website
+            Generar un sitio nuevo
           </button>
          </Link>
         </div>
@@ -68,7 +68,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
           <div className="p-4 space-y-4">
             {/* Style Selector */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Style</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Estilo</label>
               <div className="grid grid-cols-2 gap-1.5">
                 {styles.map((style) => (
                   <button
@@ -92,7 +92,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
 
             {/* Model Selector */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">AI Model</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Modelo de IA</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
@@ -109,14 +109,14 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
 
             {/* Additional Instructions */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Additional Instructions (optional)</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Instrucciones adicionales (opcional)</label>
               <input
                 type="text"
                 value={additionalInstructions}
                 onChange={(e) => setAdditionalInstructions(e.target.value)}
                 disabled={disabled}
                 className="w-full px-3 py-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400"
-                placeholder="e.g., make it more colorful, add animations..."
+                placeholder="p. ej., hazlo más colorido, añade animaciones..."
               />
             </div>
 
@@ -133,7 +133,7 @@ export default function SidebarInput({ onSubmit, disabled = false }: SidebarInpu
                   }
                 `}
               >
-                {disabled ? 'Scraping...' : 'Scrape Site'}
+                {disabled ? 'Extrayendo...' : 'Extraer sitio'}
               </button>
             </div>
           </div>

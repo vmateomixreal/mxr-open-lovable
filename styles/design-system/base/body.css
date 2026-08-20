@@ -20,8 +20,8 @@
 
 /* Body defaults */
 body {
-  font-family: var(--font-sans);
-  font-size: 1rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--accent-black);
   background-color: var(--background-base);

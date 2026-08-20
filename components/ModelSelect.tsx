@@ -75,7 +75,7 @@ export default function ModelSelect({
   }, []);
 
   const selected = models.find((model) => model.id === value);
-  const selectedLabel = selected?.name || value || 'Select model';
+  const selectedLabel = selected?.name || value || 'Seleccionar modelo';
   const selectedPrice = selected ? formatPrice(selected) : '';
 
   const selectModel = (modelId: string) => {
@@ -89,13 +89,13 @@ export default function ModelSelect({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="w-full px-3 py-1.5 text-xs font-medium text-gray-700 bg-white rounded border border-gray-200 text-left flex items-center gap-8 hover:border-gray-300 focus:border-orange-500 focus:outline-none"
-        aria-label="AI model"
+        className="mxr-select w-full text-left flex items-center gap-8 normal-case"
+        aria-label="Modelo de IA"
         aria-expanded={open}
       >
         <span className="flex-1 truncate">{selectedLabel}</span>
         {selectedPrice && (
-          <span className="text-[10px] text-gray-400 whitespace-nowrap">{selectedPrice}</span>
+          <span className="text-[10px] text-[#aaa] whitespace-nowrap">{selectedPrice}</span>
         )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="opacity-50 shrink-0">
           <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -103,7 +103,7 @@ export default function ModelSelect({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-[50] w-[min(340px,80vw)] bg-white rounded-10 border border-gray-200 shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[50] w-[min(340px,80vw)] bg-[#eee] border border-[#ccc] overflow-hidden">
           <div className="max-h-[320px] overflow-y-auto py-4">
             {models.map((model) => {
               const price = formatPrice(model);
@@ -112,22 +112,22 @@ export default function ModelSelect({
                   key={model.id}
                   type="button"
                   onClick={() => selectModel(model.id)}
-                  className={`w-full px-10 py-8 text-left hover:bg-gray-50 flex items-center gap-10 ${
-                    model.id === value ? 'bg-orange-50' : ''
+                  className={`w-full px-10 py-8 text-left flex items-center gap-10 text-[#666] hover:bg-[#4B5CF0] hover:text-white ${
+                    model.id === value ? 'bg-white text-[#444]' : 'bg-transparent'
                   }`}
                 >
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-medium text-gray-800 truncate">{model.name}</span>
+                    <span className="block text-xs font-medium truncate">{model.name}</span>
                   </span>
                   {price && (
-                    <span className="text-[10px] text-gray-400 whitespace-nowrap">{price}</span>
+                    <span className="text-[10px] whitespace-nowrap opacity-70">{price}</span>
                   )}
                 </button>
               );
             })}
           </div>
-          <div className="px-10 py-6 text-[10px] text-gray-400 border-t border-gray-100">
-            USD per 1M tokens · input / output
+          <div className="px-10 py-6 text-[10px] text-[#aaa] border-t border-[#ddd]">
+            USD por 1M tokens · entrada / salida
           </div>
         </div>
       )}

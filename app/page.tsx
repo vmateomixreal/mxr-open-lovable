@@ -10,26 +10,12 @@ import { PromptImageAttachButton, PromptImageThumbnails } from "@/components/Pro
 
 // Import shared components
 import { Connector } from "@/components/shared/layout/curvy-rect";
-import HeroFlame from "@/components/shared/effects/flame/hero-flame";
-import AsciiExplosion from "@/components/shared/effects/flame/ascii-explosion";
 import { HeaderProvider } from "@/components/shared/header/HeaderContext";
 
 // Import hero section components
-import HomeHeroBackground from "@/components/app/(home)/sections/hero/Background/Background";
-import { BackgroundOuterPiece } from "@/components/app/(home)/sections/hero/Background/BackgroundOuterPiece";
-import HomeHeroBadge from "@/components/app/(home)/sections/hero/Badge/Badge";
-import HomeHeroPixi from "@/components/app/(home)/sections/hero/Pixi/Pixi";
-import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
 import ModelSelect, { getStoredModel } from "@/components/ModelSelect";
-// import Globe from "@/components/app/(home)/sections/hero-input/_svg/Globe";
-
-// Import header components
-import HeaderBrandKit from "@/components/shared/header/BrandKit/BrandKit";
-import HeaderWrapper from "@/components/shared/header/Wrapper/Wrapper";
-import HeaderDropdownWrapper from "@/components/shared/header/Dropdown/Wrapper/Wrapper";
-import GithubIcon from "@/components/shared/header/Github/_svg/GithubIcon";
-import ButtonUI from "@/components/ui/shadcn/button"
+import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 
 interface SearchResult {
   url: string;
@@ -52,22 +38,22 @@ export default function HomePage() {
   const [showInstructionsForIndex, setShowInstructionsForIndex] = useState<number | null>(null);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
-  const [firecrawlEnabled, setFirecrawlEnabled] = useState<boolean>(true);
+  const [scrapperEnabled, setScrapperEnabled] = useState<boolean>(true);
   const [promptImages, setPromptImages] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    const storedFirecrawl = localStorage.getItem('firecrawlEnabled');
-    if (storedFirecrawl === 'false') {
-      setFirecrawlEnabled(false);
+    const storedScrapper = localStorage.getItem('scrapperEnabled') ?? localStorage.getItem('firecrawlEnabled');
+    if (storedScrapper === 'false') {
+      setScrapperEnabled(false);
     }
     setSelectedModel(getStoredModel());
   }, []);
 
-  const toggleFirecrawl = () => {
-    const next = !firecrawlEnabled;
-    setFirecrawlEnabled(next);
-    localStorage.setItem('firecrawlEnabled', String(next));
+  const toggleScrapper = () => {
+    const next = !scrapperEnabled;
+    setScrapperEnabled(next);
+    localStorage.setItem('scrapperEnabled', String(next));
     if (!next) {
       setSearchResults([]);
       setHasSearched(false);
@@ -90,7 +76,7 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error('Failed to attach image:', error);
-      toast.error('Could not attach that image. Try another file.');
+      toast.error('No se pudo adjuntar esa imagen. Prueba con otro archivo.');
     }
   };
   
@@ -107,13 +93,13 @@ export default function HomePage() {
   const handleSubmit = async (selectedResult?: SearchResult) => {
     const inputValue = url.trim();
 
-    if (!inputValue && (firecrawlEnabled || promptImages.length === 0)) {
-      toast.error(firecrawlEnabled ? "Please enter a URL or search term" : "Please describe what you want to build or attach an image");
+    if (!inputValue && (scrapperEnabled || promptImages.length === 0)) {
+      toast.error(scrapperEnabled ? "Introduce una URL o un término de búsqueda" : "Describe lo que quieres crear o adjunta una imagen");
       return;
     }
 
-    if (!firecrawlEnabled) {
-      const promptText = inputValue || 'Build a React app inspired by the attached reference images.';
+    if (!scrapperEnabled) {
+      const promptText = inputValue || 'Crea una app React inspirada en las imágenes de referencia adjuntas.';
       setPendingPromptImages(promptImages);
       sessionStorage.setItem('directPrompt', promptText);
       sessionStorage.setItem('directPromptMode', 'true');
@@ -127,7 +113,7 @@ export default function HomePage() {
 
     // Validate brand extension mode requirements
     if (extendBrandStyles && isURL(inputValue) && !additionalInstructions.trim()) {
-      toast.error("Please describe what you want to build with this brand's styles");
+      toast.error("Describe lo que quieres crear con los estilos de esta marca");
       return;
     }
     
@@ -242,14 +228,14 @@ export default function HomePage() {
         setSearchResults(results);
         setShowSearchTiles(true);
         if (results.length === 0) {
-          toast.error('No websites found. Try a different search.');
+          toast.error('No se encontraron sitios. Prueba con otra búsqueda.');
         }
       } else {
-        toast.error('Search failed. Check your Firecrawl API key and try again.');
+        toast.error('La búsqueda falló. Revisa la API key del scrapper e inténtalo de nuevo.');
       }
     } catch (error) {
       console.error('Search error:', error);
-      toast.error('Search failed. Please try again.');
+      toast.error('La búsqueda falló. Inténtalo de nuevo.');
     } finally {
       setIsSearching(false);
     }
@@ -257,65 +243,29 @@ export default function HomePage() {
 
   return (
     <HeaderProvider>
-      <div className="min-h-screen bg-background-base">
-        {/* Header/Navigation Section */}
-        <HeaderDropdownWrapper />
-
-        <div className="sticky top-0 left-0 w-full z-[101] bg-background-base header">
-          <div className="absolute top-0 cmw-container border-x border-border-faint h-full pointer-events-none" />
-          <div className="h-1 bg-border-faint w-full left-0 -bottom-1 absolute" />
-          <div className="cmw-container absolute h-full pointer-events-none top-0">
-            <Connector className="absolute -left-[10.5px] -bottom-11" />
-            <Connector className="absolute -right-[10.5px] -bottom-11" />
-          </div>
-
-          <HeaderWrapper>
-            <div className="max-w-[900px] mx-auto w-full flex justify-between items-center">
-              <div className="flex gap-24 items-center">
-                <HeaderBrandKit />
-              </div>
-              <div className="flex gap-8">
-                <a
-                  className="contents"
-                  href="https://github.com/mendableai/open-lovable"
-                  target="_blank"
-                >
-                  <ButtonUI variant="tertiary">
-                    <GithubIcon />
-                    Use this Template
-                  </ButtonUI>
-                </a>
-              </div>
-            </div>
-          </HeaderWrapper>
+      <div className="min-h-screen relative">
+        <div className="meshBg" aria-hidden>
+          <div className="meshTint" />
         </div>
 
         {/* Hero Section */}
-        <section className="overflow-x-clip" id="home-hero">
-          <div className="pt-28 lg:pt-254 lg:-mt-100 pb-115 relative" id="hero-content">
-            <HomeHeroPixi />
-            <HeroFlame />
-            <BackgroundOuterPiece />
-            <HomeHeroBackground />
-
+        <section className="overflow-x-clip relative z-[1]" id="home-hero">
+          <div className="pt-48 lg:pt-160 pb-115 relative" id="hero-content">
             <div className="relative container px-16">
-              <HomeHeroBadge />
               <HomeHeroTitle />
-              <p className="text-center text-body-large">
-                {firecrawlEnabled
-                  ? 'Clone brand format or re-imagine any website, in seconds.'
-                  : 'Describe an app and generate it from scratch, in seconds.'}
+              <p className="text-center text-body-large text-[var(--mxr-gray-text)]">
+                {scrapperEnabled
+                  ? 'Clona o reimagina cualquier web, en segundos.'
+                  : 'Describe una app y genérala desde cero, en segundos.'}
               </p>
               <button
                 type="button"
-                className={`rounded-6 px-8 lg:px-6 text-label-large h-30 lg:h-24 block mt-8 mx-auto w-max gap-4 transition-all ${
-                  firecrawlEnabled
-                    ? 'bg-black-alpha-4 hover:bg-black-alpha-6'
-                    : 'bg-heat-100 hover:bg-heat-200 text-accent-white'
+                className={`mxr-btn mt-8 mx-auto block ${
+                  scrapperEnabled ? '' : 'mxr-btn-primary'
                 }`}
-                onClick={toggleFirecrawl}
+                onClick={toggleScrapper}
               >
-                {firecrawlEnabled ? 'Powered by Firecrawl' : 'Firecrawl off · prompt mode'}
+                {scrapperEnabled ? 'Scrapper activado' : 'Scrapper desactivado · modo prompt'}
               </button>
             </div>
           </div>
@@ -340,7 +290,7 @@ export default function HomePage() {
                   }}
                 >
 
-                <div className={`p-[28px] flex gap-12 w-full relative bg-white rounded-20 ${firecrawlEnabled ? 'items-center' : 'items-start'}`}>
+                <div className={`p-[28px] flex gap-12 w-full relative bg-white rounded-20 ${scrapperEnabled ? 'items-center' : 'items-start'}`}>
                   {/* Show different UI when search results are displayed */}
                   {hasSearched && searchResults.length > 0 && !isFadingOut ? (
                     <>
@@ -361,7 +311,7 @@ export default function HomePage() {
                       
                       {/* Selection message */}
                       <div className="flex-1 text-body-input text-accent-black">
-                        Select which site to clone from the results below
+                        Elige qué sitio clonar entre los resultados de abajo
                       </div>
                       
                       {/* Search again button */}
@@ -389,12 +339,12 @@ export default function HomePage() {
                         >
                           <path d="M14 14L10 10M11 6.5C11 9 9 11 6.5 11C4 11 2 9 2 6.5C2 4 4 2 6.5 2C9 2 11 4 11 6.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
-                        <span>Search Again</span>
+                        <span>Buscar de nuevo</span>
                       </button>
                     </>
                   ) : (
                     <>
-                      {firecrawlEnabled ? (
+                      {scrapperEnabled ? (
                         isURL(url) ? (
                         // Scrape icon for URLs
                         <svg 
@@ -435,10 +385,10 @@ export default function HomePage() {
                           <path d="M11.5 5.5L14.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
                       )}
-                      {firecrawlEnabled ? (
+                      {scrapperEnabled ? (
                       <input
                         className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"
-                        placeholder="Enter URL or search term..."
+                        placeholder="Introduce una URL o un término de búsqueda..."
                         type="text"
                         value={url}
                         disabled={isSearching}
@@ -470,7 +420,7 @@ export default function HomePage() {
                       <div className="flex-1 min-w-0 flex flex-col gap-10">
                         <textarea
                           className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[48px] leading-6"
-                          placeholder="Describe what you want to build, or attach a reference image..."
+                          placeholder="Describe lo que quieres crear, o adjunta una imagen de referencia..."
                           value={url}
                           rows={2}
                           onChange={(e) => {
@@ -519,16 +469,16 @@ export default function HomePage() {
                             handleSubmit();
                           }
                         }}
-                        className={`${isSearching ? 'pointer-events-none' : ''} ${!firecrawlEnabled ? 'self-end' : ''}`}
+                        className={`${isSearching ? 'pointer-events-none' : ''} ${!scrapperEnabled ? 'self-end' : ''}`}
                       >
                         <HeroInputSubmitButton 
-                          dirty={url.length > 0 || (!firecrawlEnabled && promptImages.length > 0)} 
+                          dirty={url.length > 0 || (!scrapperEnabled && promptImages.length > 0)} 
                           buttonText={
-                            !firecrawlEnabled
-                              ? 'Generate'
+                            !scrapperEnabled
+                              ? 'Generar'
                               : isURL(url)
-                                ? 'Scrape Site'
-                                : 'Search'
+                                ? 'Extraer sitio'
+                                : 'Buscar'
                           } 
                           disabled={isSearching}
                         />
@@ -541,17 +491,17 @@ export default function HomePage() {
                   <div className="border-t border-gray-100">
                     <div
                       className="py-8 grid grid-cols-2 items-center gap-12 group cursor-pointer"
-                      onClick={toggleFirecrawl}
+                      onClick={toggleScrapper}
                     >
                       <div className="flex select-none">
                         <div className="min-w-0">
                           <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black">
-                            Use Firecrawl
+                            Usar Scrapper
                           </div>
                           <div className="text-[11px] text-black-alpha-48 mt-2">
-                            {firecrawlEnabled
-                              ? 'Search and clone websites'
-                              : 'Write a prompt and generate from scratch'}
+                            {scrapperEnabled
+                              ? 'Buscar y clonar sitios web'
+                              : 'Escribe un prompt y genera desde cero'}
                           </div>
                         </div>
                       </div>
@@ -561,10 +511,10 @@ export default function HomePage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleFirecrawl();
+                            toggleScrapper();
                           }}
-                          aria-pressed={firecrawlEnabled}
-                          aria-label={firecrawlEnabled ? 'Disable Firecrawl' : 'Enable Firecrawl'}
+                          aria-pressed={scrapperEnabled}
+                          aria-label={scrapperEnabled ? 'Desactivar Scrapper' : 'Activar Scrapper'}
                           style={{
                             width: '50px',
                             height: '20px',
@@ -572,8 +522,8 @@ export default function HomePage() {
                           }}
                         >
                           <div
-                            className={`overlay transition-opacity ${firecrawlEnabled ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ background: 'color(display-p3 0.9059 0.3294 0.0784)', backgroundColor: '#FA4500' }}
+                            className={`overlay transition-opacity ${scrapperEnabled ? 'opacity-100' : 'opacity-0'}`}
+                            style={{ backgroundColor: '#4B5CF0' }}
                           />
                           <div
                             className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
@@ -581,7 +531,7 @@ export default function HomePage() {
                               width: '28px',
                               height: '16px',
                               boxShadow: 'rgba(0, 0, 0, 0.06) 0px 6px 12px -3px, rgba(0, 0, 0, 0.06) 0px 3px 6px -1px, rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.08) 0px 0.5px 0.5px 0px',
-                              transform: firecrawlEnabled ? 'translateX(16px)' : 'none'
+                              transform: scrapperEnabled ? 'translateX(16px)' : 'none'
                             }}
                           />
                         </button>
@@ -589,7 +539,7 @@ export default function HomePage() {
                     </div>
                     <div className="py-8 grid grid-cols-2 items-center gap-12">
                       <div className="text-xs font-medium text-black-alpha-72">
-                        Model
+                        Modelo
                       </div>
                       <div className="flex justify-end">
                         <ModelSelect value={selectedModel} onChange={setSelectedModel} />
@@ -600,11 +550,11 @@ export default function HomePage() {
 
                 {/* Options Section - brand extension when cloning a URL */}
                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  firecrawlEnabled && isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[80px]') + ' opacity-100' : 'max-h-0 opacity-0'
+                  scrapperEnabled && isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[80px]') + ' opacity-100' : 'max-h-0 opacity-0'
                 }`}>
                   <div className="px-[28px] pt-0 pb-[28px]">
                     <div className="bg-white">
-                      {firecrawlEnabled && (
+                      {scrapperEnabled && (
                       <>
                       <div className={`transition-all duration-300 transform ${
                         isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
@@ -613,7 +563,7 @@ export default function HomePage() {
                           <div className="flex select-none">
                             <div className="flex lg-max:flex-col whitespace-nowrap flex-wrap min-w-0 gap-8 lg:justify-between flex-1">
                               <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black relative">
-                                Extend brand styles
+                                Extender estilos de marca
                               </div>
                             </div>
                           </div>
@@ -633,7 +583,7 @@ export default function HomePage() {
                             >
                               <div
                                 className={`overlay transition-opacity ${extendBrandStyles ? 'opacity-100' : 'opacity-0'}`}
-                                style={{ background: 'color(display-p3 0.9059 0.3294 0.0784)', backgroundColor: '#FA4500' }}
+                                style={{ backgroundColor: '#4B5CF0' }}
                               />
                               <div
                                 className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
@@ -654,7 +604,7 @@ export default function HomePage() {
                           <textarea
                             value={additionalInstructions}
                             onChange={(e) => setAdditionalInstructions(e.target.value)}
-                            placeholder="Describe the new functionality you want to build using this brand's styles..."
+                            placeholder="Describe la nueva funcionalidad que quieres crear con los estilos de esta marca..."
                             className="w-full px-4 py-10 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400 min-h-[80px] resize-none"
                           />
                         </div>
@@ -667,16 +617,13 @@ export default function HomePage() {
 
                 </div>
 
-                <div className="h-248 top-84 cw-768 pointer-events-none absolute overflow-clip -z-10">
-                  <AsciiExplosion className="-top-200" />
-                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Full-width oval carousel section */}
-        {firecrawlEnabled && showSearchTiles && hasSearched && (
+        {scrapperEnabled && showSearchTiles && hasSearched && (
           <section className={`carousel-section relative w-full overflow-hidden mt-32 mb-32 transition-opacity duration-500 ${
             isFadingOut ? 'opacity-0' : 'opacity-100'
           }`}>
@@ -767,7 +714,7 @@ export default function HomePage() {
                                 <textarea
                                   value={additionalInstructions}
                                   onChange={(e) => setAdditionalInstructions(e.target.value)}
-                                  placeholder="Describe your customizations..."
+                                  placeholder="Describe tus personalizaciones..."
                                   className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[60px]"
                                   autoFocus
                                   onClick={(e) => e.stopPropagation()}
@@ -824,7 +771,7 @@ export default function HomePage() {
                                   `}
                                 >
                                   {additionalInstructions.trim() && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
-                                  <span className="px-6 relative">Apply & Clone</span>
+                                  <span className="px-6 relative">Aplicar y clonar</span>
                                   <svg 
                                     width="20" 
                                     height="20" 
@@ -844,11 +791,11 @@ export default function HomePage() {
                           <>
                             <div className="text-white text-center mb-3">
                               <p className="text-base font-semibold mb-0.5">{result.title}</p>
-                              <p className="text-[11px] opacity-80">Choose how to clone this site</p>
+                              <p className="text-[11px] opacity-80">Elige cómo clonar este sitio</p>
                             </div>
                             
                             <div className="flex gap-3 justify-center">
-                              {/* Instant Clone Button - Orange/Heat style */}
+                              {/* Clonar al instante Button - Orange/Heat style */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -867,7 +814,7 @@ export default function HomePage() {
                                 >
                                   <path d="M11.6667 4.79163L16.875 9.99994M16.875 9.99994L11.6667 15.2083M16.875 9.99994H3.125" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"/>
                                 </svg>
-                                <span className="px-6 relative">Instant Clone</span>
+                                <span className="px-6 relative">Clonar al instante</span>
                               </button>
                               
                               {/* Instructions Button - Gray style */}
@@ -890,7 +837,7 @@ export default function HomePage() {
                                   <path d="M5 5H15M5 10H15M5 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                                   <path d="M14 14L16 16L14 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                <span className="px-6">Add Instructions</span>
+                                <span className="px-6">Añadir instrucciones</span>
                               </button>
                             </div>
                           </>
@@ -942,8 +889,8 @@ export default function HomePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-lg">No results found</p>
-                  <p className="text-gray-400 text-sm mt-1">Try a different search term</p>
+                  <p className="text-gray-500 text-lg">No se encontraron resultados</p>
+                  <p className="text-gray-400 text-sm mt-1">Prueba con otro término de búsqueda</p>
                 </div>
               </div>
             )}

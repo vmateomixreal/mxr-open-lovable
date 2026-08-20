@@ -47,21 +47,21 @@ export default function SandboxPreview({
               {previewUrl}
             </code>
           ) : (
-            <span className="text-xs text-gray-500">Waiting for sandbox URL...</span>
+            <span className="text-xs text-gray-500">Esperando la URL del sandbox...</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowConsole(!showConsole)}
             className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Toggle console"
+            title="Mostrar/ocultar consola"
           >
             <Terminal className="w-4 h-4" />
           </button>
           <button
             onClick={handleRefresh}
             className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Refresh preview"
+            title="Actualizar vista previa"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -71,7 +71,7 @@ export default function SandboxPreview({
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 hover:bg-gray-700 rounded transition-colors"
-              title="Open in new tab"
+              title="Abrir en pestaña nueva"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -108,11 +108,11 @@ export default function SandboxPreview({
         )}
       </div>
 
-      {/* Console Output (Toggle) */}
+      {/* Salida de consola (Toggle) */}
       {showConsole && output && (
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-400">Console Output</span>
+            <span className="text-sm font-semibold text-gray-400">Salida de consola</span>
           </div>
           <div className="font-mono text-xs whitespace-pre-wrap text-gray-300 max-h-48 overflow-y-auto">
             {output}

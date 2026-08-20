@@ -1,7 +1,8 @@
-/* Fire Design System - Must be imported first for color definitions */
+/* Mixreal Design System - Must be imported first for color definitions */
 @import "./fire.css";
 @import "./components/index.css";
 @import "./inside-border-fix.css";
+@import "./mixreal-theme.css";
 
 /* Additional styles */
 @import "additional-styles/utility-patterns.css";

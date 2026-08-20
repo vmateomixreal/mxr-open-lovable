@@ -26,8 +26,11 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Open Lovable v3",
-  description: "Re-imagine any website in seconds with AI-powered website builder.",
+  title: "Creador de apps con IA",
+  description: "Crea e itera apps con IA.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -37,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} ${robotoMono.variable} font-sans`}>
+      <body className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} ${robotoMono.variable}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
         {children}
       </body>
     </html>

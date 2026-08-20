@@ -50,7 +50,7 @@ export default function CodeApplicationProgress({ state }: CodeApplicationProgre
 
           {/* Simple loading text */}
           <div className="text-sm font-medium text-gray-700">
-            Applying to sandbox...
+            Aplicando en el sandbox...
           </div>
         </div>
       </motion.div>

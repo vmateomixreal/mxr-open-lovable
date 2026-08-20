@@ -29,7 +29,7 @@ export default function HeroInput() {
 
         <input
           className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48"
-          placeholder="https://example.com"
+          placeholder="https://ejemplo.com"
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}

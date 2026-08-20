@@ -8,7 +8,7 @@ import HeroInput from '@/components/HeroInput';
 import ModelSelect, { getStoredModel } from '@/components/ModelSelect';
 import { takePendingPromptImages } from '@/lib/prompt-images';
 import SidebarInput from '@/components/app/generation/SidebarInput';
-import HeaderBrandKit from '@/components/shared/header/BrandKit/BrandKit';
+import Link from 'next/link';
 import { HeaderProvider } from '@/components/shared/header/HeaderContext';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -66,9 +66,9 @@ interface ScrapeData {
 function AISandboxPage() {
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState({ text: 'Not connected', active: false });
+  const [status, setStatus] = useState({ text: 'No conectado', active: false });
   const [responseArea, setResponseArea] = useState<string[]>([]);
-  const [structureContent, setStructureContent] = useState('No sandbox created yet');
+  const [structureContent, setStructureContent] = useState('Aún no hay sandbox');
   const [promptInput, setPromptInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -285,7 +285,7 @@ function AISandboxPage() {
       } catch (error) {
         console.error('[ai-sandbox] Failed to clear old conversation:', error);
         if (isMounted) {
-          addChatMessage('Failed to clear old conversation data.', 'error');
+          addChatMessage('No se pudieron borrar los datos de la conversación anterior.', 'error');
         }
       }
       
@@ -413,7 +413,7 @@ function AISandboxPage() {
     }
     
     // Vite error checking removed - handled by template setup
-    addChatMessage('Checking packages... Sandbox is ready with Vite configuration.', 'system');
+    addChatMessage('Comprobando paquetes... El sandbox está listo con la configuración de Vite.', 'system');
   };
   
   const handleSurfaceError = (_errors: any[]) => {
@@ -428,7 +428,7 @@ function AISandboxPage() {
   
   const installPackages = async (packages: string[]) => {
     if (!sandboxData) {
-      addChatMessage('No active sandbox. Create a sandbox first!', 'system');
+      addChatMessage('No hay sandbox activo. ¡Crea un sandbox primero!', 'system');
       return;
     }
     
@@ -502,10 +502,10 @@ function AISandboxPage() {
       if (data.active && data.healthy && data.sandboxData) {
         console.log('[checkSandboxStatus] Setting sandboxData from API:', data.sandboxData);
         setSandboxData(data.sandboxData);
-        updateStatus('Sandbox active', true);
+        updateStatus('Sandbox activo', true);
       } else if (data.active && !data.healthy) {
         // Sandbox exists but not responding
-        updateStatus('Sandbox not responding', false);
+        updateStatus('Sandbox sin respuesta', false);
         // Keep existing sandboxData if we have it - don't clear it
       } else {
         // Only clear sandboxData if we don't already have it or if we're explicitly checking from a fresh state
@@ -513,11 +513,11 @@ function AISandboxPage() {
         if (!sandboxData) {
           console.log('[checkSandboxStatus] No existing sandboxData, clearing state');
           setSandboxData(null);
-          updateStatus('No sandbox', false);
+          updateStatus('Sin sandbox', false);
         } else {
           // Keep existing sandboxData and just update status
           console.log('[checkSandboxStatus] Keeping existing sandboxData, sandbox inactive but data preserved');
-          updateStatus('Sandbox status unknown', false);
+          updateStatus('Estado del sandbox desconocido', false);
         }
       }
     } catch (error) {
@@ -527,7 +527,7 @@ function AISandboxPage() {
         setSandboxData(null);
         updateStatus('Error', false);
       } else {
-        updateStatus('Status check failed', false);
+        updateStatus('Fallo al comprobar estado', false);
       }
     }
   };
@@ -545,7 +545,7 @@ function AISandboxPage() {
     console.log('[createSandbox] Starting sandbox creation...');
     setLoading(true);
     setShowLoadingBackground(true);
-    updateStatus('Creating sandbox...', false);
+    updateStatus('Creando sandbox...', false);
     setResponseArea([]);
     setScreenshotError(null);
     
@@ -564,7 +564,7 @@ function AISandboxPage() {
         console.log('[createSandbox] Setting sandboxData from creation:', data);
         sandboxDataRef.current = data;
         setSandboxData(data);
-        updateStatus('Sandbox active', true);
+        updateStatus('Sandbox activo', true);
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
         log(`URL: ${data.url}`);
@@ -983,7 +983,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         }
       } else {
         // If no final data was received, still close loading
-        addChatMessage('Code application may have partially succeeded. Check the preview.', 'system');
+        addChatMessage('La aplicación del código pudo ser parcial. Revisa la vista previa.', 'system');
       }
     } catch (error: any) {
       log(`Failed to apply code: ${error.message}`, 'error');
@@ -1083,7 +1083,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             <div className="p-4 bg-gray-100 text-gray-900 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BsFolderFill style={{ width: '16px', height: '16px' }} />
-                <span className="text-sm font-medium">Explorer</span>
+                <span className="text-sm font-medium">Explorador</span>
               </div>
             </div>
             
@@ -1231,7 +1231,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 {selectedFile ? (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className="bg-black border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                      <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                      <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {getFileIcon(selectedFile)}
                           <span className="font-mono text-sm">{selectedFile}</span>
@@ -1284,8 +1284,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             <div className="absolute inset-0 border-8 border-green-500 rounded-full animate-spin border-t-transparent"></div>
                           </div>
                         </div>
-                        <h3 className="text-xl font-medium text-white mb-2">AI is analyzing your request</h3>
-                        <p className="text-gray-400 text-sm">{generationProgress.status || 'Preparing to generate code...'}</p>
+                        <h3 className="text-xl font-medium text-white mb-2">La IA está analizando tu petición</h3>
+                        <p className="text-gray-400 text-sm">{generationProgress.status || 'Preparando la generación de código...'}</p>
                       </div>
                     </div>
                   ) : (
@@ -1293,7 +1293,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       <div className="px-4 py-2 bg-gray-100 text-gray-900 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-16 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                          <span className="font-mono text-sm">Streaming code...</span>
+                          <span className="font-mono text-sm">Recibiendo código...</span>
                         </div>
                       </div>
                       <div className="p-4 bg-gray-900 rounded">
@@ -1308,7 +1308,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                           }}
                           showLineNumbers={true}
                         >
-                          {generationProgress.streamedCode || 'Starting code generation...'}
+                          {generationProgress.streamedCode || 'Iniciando la generación de código...'}
                         </SyntaxHighlighter>
                         <span className="inline-block w-3 h-5 bg-orange-400 ml-1 animate-pulse" />
                       </div>
@@ -1319,7 +1319,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     {/* Show current file being generated */}
                     {generationProgress.currentFile && (
                       <div className="bg-black border-2 border-gray-400 rounded-lg overflow-hidden shadow-sm">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             <span className="font-mono text-sm">{generationProgress.currentFile.path}</span>
@@ -1360,7 +1360,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     {/* Show completed files */}
                     {generationProgress.files.map((file, idx) => (
                       <div key={idx} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-green-500">✓</span>
                             <span className="font-mono text-sm">{file.path}</span>
@@ -1401,10 +1401,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     {/* Show remaining raw stream if there's content after the last file */}
                     {!generationProgress.currentFile && generationProgress.isGenerating && generationProgress.streamedCode.length > 0 && (
                       <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#36322F] text-white flex items-center justify-between">
+                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-16 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                            <span className="font-mono text-sm">Processing...</span>
+                            <span className="font-mono text-sm">Procesando...</span>
                           </div>
                         </div>
                         <div className="bg-gray-900 border border-gray-700 rounded">
@@ -1431,7 +1431,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
                               // If only whitespace or nothing left, show loading message
                               // Use "Loading sandbox..." instead of "Waiting for next file..." for better UX
-                              return remainingContent || 'Loading sandbox...';
+                              return remainingContent || 'Cargando sandbox...';
                             })()}
                           </SyntaxHighlighter>
                         </div>
@@ -1473,7 +1473,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               /* eslint-disable-next-line @next/next/no-img-element */
               <img 
                 src={urlScreenshot} 
-                alt="Website preview" 
+                alt="Vista previa del sitio" 
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
                 style={{ 
                   opacity: isScreenshotLoaded ? 1 : 0,
@@ -1501,18 +1501,18 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   
                   {/* Status text */}
                   <p className="text-white text-lg font-medium">
-                    {isCapturingScreenshot ? 'Analyzing website...' :
-                     isPreparingDesign ? 'Preparing design...' :
-                     generationProgress.isGenerating ? 'Generating code...' :
-                     'Loading...'}
+                    {isCapturingScreenshot ? 'Analizando el sitio...' :
+                     isPreparingDesign ? 'Preparando el diseño...' :
+                     generationProgress.isGenerating ? 'Generando código...' :
+                     'Cargando...'}
                   </p>
                   
                   {/* Subtle progress hint */}
                   <p className="text-white/60 text-sm mt-2">
-                    {isCapturingScreenshot ? 'Taking a screenshot of the site' :
-                     isPreparingDesign ? 'Understanding the layout and structure' :
-                     generationProgress.isGenerating ? 'Writing React components' :
-                     'Please wait...'}
+                    {isCapturingScreenshot ? 'Capturando una imagen del sitio' :
+                     isPreparingDesign ? 'Entendiendo el layout y la estructura' :
+                     generationProgress.isGenerating ? 'Escribiendo componentes React' :
+                     'Espera un momento...'}
                   </p>
                 </div>
               </div>
@@ -1529,7 +1529,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               ref={iframeRef}
               src={sandboxData.url}
               className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
+              title="Preview"
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             />
@@ -1551,9 +1551,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   </div>
                   
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {codeApplicationState.stage === 'analyzing' && 'Analyzing code...'}
-                    {codeApplicationState.stage === 'installing' && 'Installing packages...'}
-                    {codeApplicationState.stage === 'applying' && 'Applying changes...'}
+                    {codeApplicationState.stage === 'analyzing' && 'Analizando el código...'}
+                    {codeApplicationState.stage === 'installing' && 'Instalando paquetes...'}
+                    {codeApplicationState.stage === 'applying' && 'Aplicando cambios...'}
                   </h3>
                   
                   {/* Package list during installation */}
@@ -1587,9 +1587,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   )}
                   
                   <p className="text-sm text-gray-500 mt-2">
-                    {codeApplicationState.stage === 'analyzing' && 'Parsing generated code and detecting dependencies...'}
-                    {codeApplicationState.stage === 'installing' && 'This may take a moment while npm installs the required packages...'}
-                    {codeApplicationState.stage === 'applying' && 'Writing files to your sandbox environment...'}
+                    {codeApplicationState.stage === 'analyzing' && 'Analizando el código generado y detectando dependencias...'}
+                    {codeApplicationState.stage === 'installing' && 'Esto puede tardar un momento mientras npm instala los paquetes...'}
+                    {codeApplicationState.stage === 'applying' && 'Escribiendo archivos en el sandbox...'}
                   </p>
                 </div>
               </div>
@@ -1599,7 +1599,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             {generationProgress.isGenerating && generationProgress.isEdit && !codeApplicationState.stage && (
               <div className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-white text-xs font-medium">Generating code...</span>
+                <span className="text-white text-xs font-medium">Generando código...</span>
               </div>
             )}
             
@@ -1613,7 +1613,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 }
               }}
               className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-              title="Refresh sandbox"
+              title="Actualizar sandbox"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1628,17 +1628,17 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         <div className="flex items-center justify-center h-full bg-gray-50 text-gray-600 text-lg">
           {screenshotError ? (
             <div className="text-center">
-              <p className="mb-2">Failed to capture screenshot</p>
+              <p className="mb-2">No se pudo capturar la captura de pantalla</p>
               <p className="text-sm text-gray-500">{screenshotError}</p>
             </div>
           ) : sandboxData ? (
             <div className="text-gray-500">
               <div className="w-16 h-16 border-2 border-gray-300 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-sm">Loading preview...</p>
+              <p className="text-sm">Cargando vista previa...</p>
             </div>
           ) : (
             <div className="text-gray-500 text-center">
-              <p className="text-sm">Start chatting to create your first app</p>
+              <p className="text-sm">Empieza a chatear para crear tu primera app</p>
             </div>
           )}
         </div>
@@ -1649,7 +1649,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
   const sendChatMessage = async () => {
     const images = [...chatImages];
-    const message = aiChatInput.trim() || (images.length ? 'Update the app using the attached reference images.' : '');
+    const message = aiChatInput.trim() || (images.length ? 'Actualiza la app usando las imágenes de referencia adjuntas.' : '');
     if (!message) return;
     
     if (!aiEnabled) {
@@ -1666,7 +1666,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     if (lowerMessage === 'check packages' || lowerMessage === 'install packages' || lowerMessage === 'npm install') {
       if (!sandboxData) {
         // More helpful message - user might be trying to run this too early
-        addChatMessage('The sandbox is still being set up. Please wait for the generation to complete, then try again.', 'system');
+        addChatMessage('El sandbox aún se está preparando. Espera a que termine la generación e inténtalo de nuevo.', 'system');
         return;
       }
       await checkAndInstallPackages();
@@ -1679,7 +1679,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     if (!sandboxData) {
       sandboxCreating = true;
-      addChatMessage('Creating sandbox while I plan your app...', 'system');
+      addChatMessage('Creando el sandbox mientras planifico tu app...', 'system');
       sandboxPromise = createSandbox(true).catch((error: any) => {
         addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
         throw error;
@@ -1700,7 +1700,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         streamedCode: '',
         isStreaming: false,
         isThinking: true,
-        thinkingText: 'Analyzing your request...',
+        thinkingText: 'Analizando tu petición...',
         thinkingDuration: undefined,
         currentFile: undefined,
         lastProcessedPosition: 0,
@@ -1807,7 +1807,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       streamedCode: newStreamedCode,
                       isStreaming: true,
                       isThinking: false,
-                      status: 'Generating code...'
+                      status: 'Generando código...'
                     };
                     
                     // Process complete files from the accumulated stream
@@ -2002,7 +2002,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           );
         } else {
           // For new generation, show all files
-          addChatMessage(explanation || 'Code generated!', 'ai', {
+          addChatMessage(explanation || '¡Código generado!', 'ai', {
             appliedFiles: generatedFiles
           });
         }
@@ -2014,7 +2014,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         // Wait for sandbox creation if it's still in progress
         let activeSandboxData = sandboxData;
         if (sandboxPromise) {
-          addChatMessage('Waiting for sandbox to be ready...', 'system');
+          addChatMessage('Esperando a que el sandbox esté listo...', 'system');
           try {
             const newSandboxData = await sandboxPromise;
             if (newSandboxData != null) {
@@ -2023,9 +2023,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               setSandboxData(newSandboxData);
             }
             // Remove the waiting message
-            setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
+            setChatMessages(prev => prev.filter(msg => msg.content !== 'Esperando a que el sandbox esté listo...'));
           } catch {
-            addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
+            addChatMessage('Falló la creación del sandbox. No se puede aplicar el código.', 'system');
             return;
           }
         }
@@ -2048,7 +2048,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         ...prev,
         isGenerating: false,
         isStreaming: false,
-        status: 'Generation complete!',
+        status: '¡Generación completada!',
         isEdit: prev.isEdit,
         // Clear thinking state on completion
         isThinking: false,
@@ -2085,7 +2085,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
   const downloadZip = async () => {
     if (!sandboxData) {
-      addChatMessage('Please wait for the sandbox to be created before downloading.', 'system');
+      addChatMessage('Espera a que se cree el sandbox antes de descargar.', 'system');
       return;
     }
     
@@ -2103,7 +2103,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       
       if (data.success) {
         log('Zip file created!');
-        addChatMessage('ZIP file created! Download starting...', 'system');
+        addChatMessage('¡ZIP creado! Empieza la descarga...', 'system');
         
         const link = document.createElement('a');
         link.href = data.dataUrl;
@@ -2133,16 +2133,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
   const reapplyLastGeneration = async () => {
     if (!conversationContext.lastGeneratedCode) {
-      addChatMessage('No previous generation to re-apply', 'system');
+      addChatMessage('No hay una generación anterior para reaplicar', 'system');
       return;
     }
     
     if (!sandboxData) {
-      addChatMessage('Please create a sandbox first', 'system');
+      addChatMessage('Crea un sandbox primero', 'system');
       return;
     }
     
-    addChatMessage('Re-applying last generation...', 'system');
+    addChatMessage('Reaplicando la última generación...', 'system');
     const isEdit = conversationContext.appliedCode.length > 0;
     await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit);
   };
@@ -2428,7 +2428,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 //         ...prev,
 //         isGenerating: false,
 //         isStreaming: false,
-//         status: 'Generation complete!',
+//         status: '¡Generación completada!',
 //         isEdit: prev.isEdit
 //       }));
 //       
@@ -2447,16 +2447,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 //         // Wait for sandbox creation if it's still in progress
 //         let activeSandboxData = sandboxData;
 //         if (sandboxPromise) {
-//           addChatMessage('Waiting for sandbox to be ready...', 'system');
+//           addChatMessage('Esperando a que el sandbox esté listo...', 'system');
 //           try {
 //             const newSandboxData = await sandboxPromise;
 //             if (newSandboxData) {
 //               activeSandboxData = newSandboxData;
 //             }
 //             // Remove the waiting message
-//             setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
+//             setChatMessages(prev => prev.filter(msg => msg.content !== 'Esperando a que el sandbox esté listo...'));
 //           } catch (error: any) {
-//             addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
+//             addChatMessage('Falló la creación del sandbox. No se puede aplicar el código.', 'system');
 //             throw error;
 //           }
 //         }
@@ -2486,7 +2486,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 //           ...prev,
 //           isGenerating: false,
 //           isStreaming: false,
-//           status: 'Generation complete!'
+//           status: '¡Generación completada!'
 //         }));
 //         
 //         // Clear screenshot and preparing design states to prevent them from showing on next run
@@ -2550,10 +2550,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           setActiveTab('preview');
         }
       } else {
-        setScreenshotError(data.error || 'Failed to capture screenshot');
+        setScreenshotError(data.error || 'No se pudo capturar la captura de pantalla');
       }
     } catch (error) {
-      console.error('Failed to capture screenshot:', error);
+      console.error('No se pudo capturar la captura de pantalla:', error);
       setScreenshotError('Network error while capturing screenshot');
     } finally {
       setIsCapturingScreenshot(false);
@@ -2807,7 +2807,7 @@ COLOR SYSTEM:
 - Primary Color: ${branding.colors?.primary || 'not specified'}
 - Accent Color: ${branding.colors?.accent || 'not specified'}
 - Background: ${branding.colors?.background || 'not specified'}
-- Text Primary: ${branding.colors?.textPrimary || 'not specified'}
+- Text Principal: ${branding.colors?.textPrimary || 'not specified'}
 - Link Color: ${branding.colors?.link || 'not specified'}
 
 TYPOGRAPHY:
@@ -2815,30 +2815,30 @@ TYPOGRAPHY:
 - Heading Font: ${branding.typography?.fontFamilies?.heading || 'system default'}
 - Font Stack (Body): ${branding.typography?.fontStacks?.body?.join(', ') || 'system-ui, sans-serif'}
 - Font Stack (Heading): ${branding.typography?.fontStacks?.heading?.join(', ') || 'system-ui, sans-serif'}
-- H1 Size: ${branding.typography?.fontSizes?.h1 || '36px'}
-- H2 Size: ${branding.typography?.fontSizes?.h2 || '30px'}
-- Body Size: ${branding.typography?.fontSizes?.body || '16px'}
+- Tamaño H1: ${branding.typography?.fontSizes?.h1 || '36px'}
+- Tamaño H2: ${branding.typography?.fontSizes?.h2 || '30px'}
+- Tamaño del cuerpo: ${branding.typography?.fontSizes?.body || '16px'}
 
 SPACING & LAYOUT:
 - Base Spacing Unit: ${branding.spacing?.baseUnit || '4'}px
-- Border Radius: ${branding.spacing?.borderRadius || '6px'}
+- Radio de borde: ${branding.spacing?.borderRadius || '6px'}
 
 BUTTON STYLES:
-Primary Button:
+Botón principal:
   - Background: ${branding.components?.buttonPrimary?.background || branding.colors?.primary}
   - Text Color: ${branding.components?.buttonPrimary?.textColor || '#FFFFFF'}
-  - Border Radius: ${branding.components?.buttonPrimary?.borderRadius || branding.spacing?.borderRadius || '8px'}
+  - Radio de borde: ${branding.components?.buttonPrimary?.borderRadius || branding.spacing?.borderRadius || '8px'}
   - Shadow: ${branding.components?.buttonPrimary?.shadow || 'none'}
 
-Secondary Button:
+Botón secundario:
   - Background: ${branding.components?.buttonSecondary?.background || '#F9F9F9'}
   - Text Color: ${branding.components?.buttonSecondary?.textColor || branding.colors?.textPrimary}
-  - Border Radius: ${branding.components?.buttonSecondary?.borderRadius || branding.spacing?.borderRadius || '8px'}
+  - Radio de borde: ${branding.components?.buttonSecondary?.borderRadius || branding.spacing?.borderRadius || '8px'}
   - Shadow: ${branding.components?.buttonSecondary?.shadow || 'none'}
 
 INPUT FIELDS:
 - Border Color: ${branding.components?.input?.borderColor || '#CCCCCC'}
-- Border Radius: ${branding.components?.input?.borderRadius || branding.spacing?.borderRadius || '6px'}
+- Radio de borde: ${branding.components?.input?.borderRadius || branding.spacing?.borderRadius || '6px'}
 
 BRAND PERSONALITY:
 - Tone: ${branding.personality?.tone || 'professional'}
@@ -3072,7 +3072,7 @@ Focus on the key sections and content, making it clean and modern.`;
                       streamedCode: newStreamedCode,
                       isStreaming: true,
                       isThinking: false,
-                      status: 'Generating code...'
+                      status: 'Generando código...'
                     };
                     
                     // Process complete files from the accumulated stream
@@ -3177,7 +3177,7 @@ Focus on the key sections and content, making it clean and modern.`;
           ...prev,
           isGenerating: false,
           isStreaming: false,
-          status: 'Generation complete!'
+          status: '¡Generación completada!'
         }));
         
         if (generatedCode) {
@@ -3235,7 +3235,7 @@ Focus on the key sections and content, making it clean and modern.`;
           ...prev,
           isGenerating: false,
           isStreaming: false,
-          status: 'Generation complete!'
+          status: '¡Generación completada!'
         }));
         
         // Clear screenshot and preparing design states to prevent them from showing on next run
@@ -3273,9 +3273,14 @@ Focus on the key sections and content, making it clean and modern.`;
 
   return (
     <HeaderProvider>
-      <div className="font-sans bg-background text-foreground h-screen flex flex-col">
-      <div className="bg-white py-[15px] py-[8px] border-b border-border-faint flex items-center justify-between shadow-sm">
-        <HeaderBrandKit />
+      <div className="text-foreground h-screen flex flex-col relative" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <div className="meshBg" aria-hidden>
+        <div className="meshTint" />
+      </div>
+      <div className="relative z-[1] h-32 px-12 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-[#ccc]">
+        <Link href="/" className="text-[13px] text-[#666] hover:text-[#222]">
+          Inicio
+        </Link>
         <div className="flex items-center gap-2">
           {/* Model Selector */}
           <ModelSelect
@@ -3293,8 +3298,8 @@ Focus on the key sections and content, making it clean and modern.`;
           />
           <button 
             onClick={() => createSandbox()}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100"
-            title="Create new sandbox"
+            className="mxr-btn"
+            title="Crear nuevo sandbox"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -3302,8 +3307,8 @@ Focus on the key sections and content, making it clean and modern.`;
           </button>
           <button 
             onClick={reapplyLastGeneration}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Re-apply last generation"
+            className="mxr-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Reaplicar la última generación"
             disabled={!conversationContext.lastGeneratedCode || !sandboxData}
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3313,8 +3318,8 @@ Focus on the key sections and content, making it clean and modern.`;
           <button 
             onClick={downloadZip}
             disabled={!sandboxData}
-            className="p-8 rounded-lg transition-colors bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Download your Vite app as ZIP"
+            className="mxr-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Descargar la app Vite en ZIP"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
@@ -3324,9 +3329,9 @@ Focus on the key sections and content, making it clean and modern.`;
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative z-[1]">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className="flex-1 max-w-[400px] flex flex-col border-r border-border bg-background">
+        <div className="flex-1 max-w-[400px] flex flex-col border-r border-[#ccc] bg-white/90 backdrop-blur-sm">
           {/* Sidebar Input Component */}
           {!hasInitialSubmission ? (
             <div className="p-4 border-b border-border">
@@ -3393,7 +3398,7 @@ Focus on the key sections and content, making it clean and modern.`;
                       {screenshot && (
                         <div className="w-full">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-600">Screenshot Preview</span>
+                            <span className="text-xs font-medium text-gray-600">Vista previa de captura</span>
                             <button
                               onClick={() => setScreenshotCollapsed(!screenshotCollapsed)}
                               className="text-gray-500 hover:text-gray-700 transition-colors p-1"
@@ -3454,12 +3459,12 @@ Focus on the key sections and content, making it clean and modern.`;
                   <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className="block">
                       <div className={`block rounded-[10px] px-14 py-8 ${
-                        msg.type === 'user' ? 'bg-[#36322F] text-white ml-auto max-w-[80%]' :
+                        msg.type === 'user' ? 'bg-[#4B5CF0] text-white ml-auto max-w-[80%]' :
                         msg.type === 'ai' ? 'bg-gray-100 text-gray-900 mr-auto max-w-[80%]' :
-                        msg.type === 'system' ? 'bg-[#36322F] text-white text-sm' :
-                        msg.type === 'command' ? 'bg-[#36322F] text-white font-mono text-sm' :
+                        msg.type === 'system' ? 'bg-[#4B5CF0] text-white text-sm' :
+                        msg.type === 'command' ? 'bg-[#4B5CF0] text-white font-mono text-sm' :
                         msg.type === 'error' ? 'bg-red-900 text-red-100 text-sm border border-red-700' :
-                        'bg-[#36322F] text-white text-sm'
+                        'bg-[#4B5CF0] text-white text-sm'
                       }`}>
                     {msg.type === 'command' ? (
                       <div className="flex items-start gap-2">
@@ -3483,9 +3488,9 @@ Focus on the key sections and content, making it clean and modern.`;
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold mb-1">Build Errors Detected</div>
+                          <div className="font-semibold mb-1">Errores de compilación detectados</div>
                           <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
-                          <div className="mt-2 text-xs opacity-70">Press 'F' or click the Fix button above to resolve</div>
+                          <div className="mt-2 text-xs opacity-70">Pulsa 'F' o el botón Corregir de arriba para resolverlos</div>
                         </div>
                       </div>
                     ) : (
@@ -3511,7 +3516,7 @@ Focus on the key sections and content, making it clean and modern.`;
                       {/* Show branding data if this is a brand extraction message */}
                       {msg.metadata?.brandingData && (
                         <div className="mt-3 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl overflow-hidden max-w-[500px] shadow-sm">
-                          <div className="bg-[#36322F] px-16 py-12">
+                          <div className="bg-[#4B5CF0] px-16 py-12">
                             <div className="flex items-center gap-8">
                               <Image
                                 src={`https://www.google.com/s2/favicons?domain=${msg.metadata.sourceUrl}&sz=32`}
@@ -3521,7 +3526,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                 className="w-16 h-16"
                               />
                               <div className="text-sm font-semibold text-white">
-                                Brand Guidelines
+                                Guía de marca
                               </div>
                             </div>
                           </div>
@@ -3531,7 +3536,7 @@ Focus on the key sections and content, making it clean and modern.`;
                             {msg.metadata.brandingData.colorScheme && (
                               <div className="mb-16">
                                 <div className="text-sm">
-                                  <span className="text-gray-600 font-medium">Mode:</span>{' '}
+                                  <span className="text-gray-600 font-medium">Modo:</span>{' '}
                                   <span className="font-semibold text-gray-900 capitalize">{msg.metadata.brandingData.colorScheme}</span>
                                 </div>
                               </div>
@@ -3540,13 +3545,13 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Colors */}
                             {msg.metadata.brandingData.colors && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Colors</div>
+                                <div className="text-sm font-semibold text-gray-900 mb-8">Colores</div>
                                 <div className="flex flex-wrap gap-12">
                                   {msg.metadata.brandingData.colors.primary && (
                                     <div className="flex items-center gap-8">
                                       <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.primary }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Primary</div>
+                                        <div className="font-semibold text-gray-900">Principal</div>
                                         <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.primary}</div>
                                       </div>
                                     </div>
@@ -3555,7 +3560,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                     <div className="flex items-center gap-8">
                                       <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.accent }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Accent</div>
+                                        <div className="font-semibold text-gray-900">Acento</div>
                                         <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.accent}</div>
                                       </div>
                                     </div>
@@ -3564,7 +3569,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                     <div className="flex items-center gap-8">
                                       <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.background }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Background</div>
+                                        <div className="font-semibold text-gray-900">Fondo</div>
                                         <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.background}</div>
                                       </div>
                                     </div>
@@ -3573,7 +3578,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                     <div className="flex items-center gap-8">
                                       <div className="w-32 h-32 rounded border border-gray-300" style={{ backgroundColor: msg.metadata.brandingData.colors.textPrimary }} />
                                       <div className="text-sm">
-                                        <div className="font-semibold text-gray-900">Text</div>
+                                        <div className="font-semibold text-gray-900">Texto</div>
                                         <div className="text-gray-600 font-mono text-xs">{msg.metadata.brandingData.colors.textPrimary}</div>
                                       </div>
                                     </div>
@@ -3585,35 +3590,35 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Typography */}
                             {msg.metadata.brandingData.typography && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Typography</div>
+                                <div className="text-sm font-semibold text-gray-900 mb-8">Tipografía</div>
                                 <div className="grid grid-cols-2 gap-12 text-sm">
                                   {msg.metadata.brandingData.typography.fontFamilies?.primary && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Primary:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Principal:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontFamilies.primary}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontFamilies?.heading && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Heading:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Títulos:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontFamilies.heading}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.h1 && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">H1 Size:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Tamaño H1:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.h1}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.h2 && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">H2 Size:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Tamaño H2:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.h2}</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.typography.fontSizes?.body && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Body Size:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Tamaño del cuerpo:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.typography.fontSizes.body}</span>
                                     </div>
                                   )}
@@ -3624,17 +3629,17 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Spacing */}
                             {msg.metadata.brandingData.spacing && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Spacing</div>
+                                <div className="text-sm font-semibold text-gray-900 mb-8">Espaciado</div>
                                 <div className="flex flex-wrap gap-16 text-sm">
                                   {msg.metadata.brandingData.spacing.baseUnit && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Base Unit:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Unidad base:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.spacing.baseUnit}px</span>
                                     </div>
                                   )}
                                   {msg.metadata.brandingData.spacing.borderRadius && (
                                     <div>
-                                      <span className="text-gray-600 font-medium">Border Radius:</span>{' '}
+                                      <span className="text-gray-600 font-medium">Radio de borde:</span>{' '}
                                       <span className="font-semibold text-gray-900">{msg.metadata.brandingData.spacing.borderRadius}</span>
                                     </div>
                                   )}
@@ -3642,13 +3647,13 @@ Focus on the key sections and content, making it clean and modern.`;
                               </div>
                             )}
 
-                            {/* Button Styles */}
+                            {/* Estilos de botón */}
                             {msg.metadata.brandingData.components?.buttonPrimary && (
                               <div className="mb-16">
-                                <div className="text-sm font-semibold text-gray-900 mb-8">Button Styles</div>
+                                <div className="text-sm font-semibold text-gray-900 mb-8">Estilos de botón</div>
                                 <div className="flex flex-wrap gap-12">
                                   <div>
-                                    <div className="text-xs text-gray-600 mb-6 font-medium">Primary Button</div>
+                                    <div className="text-xs text-gray-600 mb-6 font-medium">Botón principal</div>
                                     <button
                                       className="px-16 py-8 text-sm font-medium"
                                       style={{
@@ -3658,12 +3663,12 @@ Focus on the key sections and content, making it clean and modern.`;
                                         boxShadow: msg.metadata.brandingData.components.buttonPrimary.shadow
                                       }}
                                     >
-                                      Sample Button
+                                      Botón de ejemplo
                                     </button>
                                   </div>
                                   {msg.metadata.brandingData.components?.buttonSecondary && (
                                     <div>
-                                      <div className="text-xs text-gray-600 mb-6 font-medium">Secondary Button</div>
+                                      <div className="text-xs text-gray-600 mb-6 font-medium">Botón secundario</div>
                                       <button
                                         className="px-16 py-8 text-sm font-medium"
                                         style={{
@@ -3673,7 +3678,7 @@ Focus on the key sections and content, making it clean and modern.`;
                                           boxShadow: msg.metadata.brandingData.components.buttonSecondary.shadow
                                         }}
                                       >
-                                        Sample Button
+                                        Botón de ejemplo
                                       </button>
                                     </div>
                                   )}
@@ -3684,7 +3689,7 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Personality */}
                             {msg.metadata.brandingData.personality && (
                               <div className="text-sm">
-                                <span className="text-gray-600 font-medium">Personality:</span>{' '}
+                                <span className="text-gray-600 font-medium">Personalidad:</span>{' '}
                                 <span className="font-semibold text-gray-900 capitalize">
                                   {msg.metadata.brandingData.personality.tone} tone, {msg.metadata.brandingData.personality.energy} energy
                                 </span>
@@ -3694,7 +3699,7 @@ Focus on the key sections and content, making it clean and modern.`;
                             {/* Target Audience */}
                             {msg.metadata.brandingData.personality?.targetAudience && (
                               <div className="text-sm mt-8">
-                                <span className="text-gray-600 font-medium">Target:</span>{' '}
+                                <span className="text-gray-600 font-medium">Objetivo:</span>{' '}
                                 <span className="text-gray-900">{msg.metadata.brandingData.personality.targetAudience}</span>
                               </div>
                             )}
@@ -3706,7 +3711,7 @@ Focus on the key sections and content, making it clean and modern.`;
                       {msg.metadata?.appliedFiles && msg.metadata.appliedFiles.length > 0 && (
                     <div className="mt-3 inline-block bg-gray-100 rounded-[10px] p-5">
                       <div className="text-sm font-medium mb-3 text-gray-700">
-                        {msg.content.includes('Applied') ? 'Files Updated:' : 'Generated Files:'}
+                        {msg.content.includes('Applied') ? 'Files Updated:' : 'Archivos generados:'}
                       </div>
                       <div className="flex flex-wrap items-start gap-2">
                         {msg.metadata.appliedFiles.map((filePath, fileIdx) => {
@@ -3719,7 +3724,7 @@ Focus on the key sections and content, making it clean and modern.`;
                           return (
                             <div
                               key={`applied-${fileIdx}`}
-                              className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-sm animate-fade-in-up"
+                              className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-sm animate-fade-in-up"
                               style={{ animationDelay: `${fileIdx * 30}ms` }}
                             >
                               <span className={`inline-block w-1.5 h-1.5 rounded-full ${
@@ -3739,12 +3744,12 @@ Focus on the key sections and content, making it clean and modern.`;
                       {/* Show generated files for completion messages - but only if no appliedFiles already shown */}
                       {isGenerationComplete && generationProgress.files.length > 0 && idx === chatMessages.length - 1 && !msg.metadata?.appliedFiles && !chatMessages.some(m => m.metadata?.appliedFiles) && (
                     <div className="mt-2 inline-block bg-gray-100 rounded-[10px] p-3">
-                      <div className="text-xs font-medium mb-1 text-gray-700">Generated Files:</div>
+                      <div className="text-xs font-medium mb-1 text-gray-700">Archivos generados:</div>
                       <div className="flex flex-wrap items-start gap-1">
                         {generationProgress.files.map((file, fileIdx) => (
                           <div
                             key={`complete-${fileIdx}`}
-                            className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-xs animate-fade-in-up"
+                            className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-xs animate-fade-in-up"
                             style={{ animationDelay: `${fileIdx * 30}ms` }}
                           >
                             <span className={`inline-block w-1.5 h-1.5 rounded-full ${
@@ -3781,7 +3786,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   {generationProgress.files.map((file, idx) => (
                     <div
                       key={`file-${idx}`}
-                      className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#36322F] text-white rounded-[10px] text-xs animate-fade-in-up"
+                      className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-xs animate-fade-in-up"
                       style={{ animationDelay: `${idx * 30}ms` }}
                     >
                       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3793,7 +3798,7 @@ Focus on the key sections and content, making it clean and modern.`;
                   
                   {/* Show current file being generated */}
                   {generationProgress.currentFile && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-[#36322F]/70 text-white rounded-[10px] text-sm animate-pulse"
+                    <div className="flex items-center gap-1 px-2 py-1 bg-[#4B5CF0]/70 text-white rounded-[10px] text-sm animate-pulse"
                       style={{ animationDelay: `${generationProgress.files.length * 30}ms` }}>
                       <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {generationProgress.currentFile.path.split('/').pop()}
@@ -3813,7 +3818,7 @@ Focus on the key sections and content, making it clean and modern.`;
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-medium text-gray-600">AI Response Stream</span>
+                        <span className="text-xs font-medium text-gray-600">Respuesta de la IA en directo</span>
                       </div>
                       <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent" />
                     </div>
@@ -3848,7 +3853,7 @@ Focus on the key sections and content, making it clean and modern.`;
 
           <div className="p-4 border-t border-border bg-background-base">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-black-alpha-48">Model</span>
+              <span className="text-[11px] text-black-alpha-48">Modelo</span>
               <ModelSelect
                 value={aiModel}
                 onChange={(model) => {
@@ -3866,7 +3871,7 @@ Focus on the key sections and content, making it clean and modern.`;
               value={aiChatInput}
               onChange={setAiChatInput}
               onSubmit={sendChatMessage}
-              placeholder="Describe what you want to build..."
+              placeholder="Describe lo que quieres crear..."
               showSearchFeatures={false}
               allowImages
               images={chatImages}
@@ -3876,40 +3881,32 @@ Focus on the key sections and content, making it clean and modern.`;
         </div>
 
         {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-3 pt-4 pb-4 bg-white border-b border-gray-200 flex justify-between items-center">
-            <div className="flex items-center gap-2">
+        <div className="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-sm">
+          <div className="px-12 pt-8 pb-8 mxr-menubar flex justify-between items-center">
+            <div className="flex items-center gap-8">
               {/* Toggle-style Code/View switcher */}
-              <div className="inline-flex bg-gray-100 border border-gray-200 rounded-md p-0.5">
+              <div className="inline-flex gap-8">
                 <button
                   onClick={() => setActiveTab('generation')}
-                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
-                    activeTab === 'generation' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`mxr-tab ${activeTab === 'generation' ? 'selected' : ''}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
-                    <span>Code</span>
+                    <span>Código</span>
                   </div>
                 </button>
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`px-3 py-1 rounded transition-all text-xs font-medium ${
-                    activeTab === 'preview' 
-                      ? 'bg-white text-gray-900 shadow-sm' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-900'
-                  }`}
+                  className={`mxr-tab ${activeTab === 'preview' ? 'selected' : ''}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span>View</span>
+                    <span>Vista</span>
                   </div>
                 </button>
               </div>
@@ -3918,23 +3915,23 @@ Focus on the key sections and content, making it clean and modern.`;
               {/* Files generated count */}
               {activeTab === 'generation' && !generationProgress.isEdit && generationProgress.files.length > 0 && (
                 <div className="text-gray-500 text-xs font-medium">
-                  {generationProgress.files.length} files generated
+                  {generationProgress.files.length} archivos generados
                 </div>
               )}
               
               {/* Live Code Generation Status */}
               {activeTab === 'generation' && generationProgress.isGenerating && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  {generationProgress.isEdit ? 'Editing code' : 'Live generation'}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#ddd] text-xs font-medium text-[#555] uppercase">
+                  <div className="w-1.5 h-1.5 bg-[#4B5CF0] rounded-full animate-pulse" />
+                  {generationProgress.isEdit ? 'Editando código' : 'Generación en directo'}
                 </div>
               )}
               
               {/* Sandbox Status Indicator */}
               {sandboxData && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 border border-gray-200 rounded-md text-xs font-medium text-gray-700">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                  Sandbox active
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#ddd] text-xs font-medium text-[#555] uppercase">
+                  <div className="w-1.5 h-1.5 bg-[#08f] rounded-full" />
+                  Sandbox activo
                 </div>
               )}
               
@@ -3944,8 +3941,8 @@ Focus on the key sections and content, making it clean and modern.`;
                   href={sandboxData.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  title="Open in new tab"
-                  className="p-1.5 rounded-md transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  title="Abrir en pestaña nueva"
+                  className="mxr-btn inline-flex items-center"
                 >
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -3970,7 +3967,7 @@ Focus on the key sections and content, making it clean and modern.`;
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Cargando...</div>}>
       <AISandboxPage />
     </Suspense>
   );
