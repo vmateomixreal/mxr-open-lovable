@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
 import ModelSelect, { getStoredModel } from '@/components/ModelSelect';
+import { ModelSelectorGate } from '@/components/ModelSelectorGate';
 import { takePendingPromptImages } from '@/lib/prompt-images';
 import { isLogoSwapRequest } from '@/lib/prompt-images';
 import SidebarInput from '@/components/app/generation/SidebarInput';
@@ -83,6 +84,9 @@ function AISandboxPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
+    if (!appConfig.ui.showModelSelector) {
+      return appConfig.ai.lockedModel;
+    }
     const modelParam = searchParams.get('model');
     if (modelParam) {
       return modelParam;
@@ -1756,7 +1760,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: message,
-          model: aiModel,
+          model: appConfig.ui.showModelSelector ? aiModel : appConfig.ai.lockedModel,
           context: fullContext,
           isEdit: conversationContext.appliedCode.length > 0,
           images
@@ -3033,7 +3037,7 @@ Focus on the key sections and content, making it clean and modern.`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             prompt,
-            model: aiModel,
+            model: appConfig.ui.showModelSelector ? aiModel : appConfig.ai.lockedModel,
             images: isDirectPrompt ? initialPromptImagesRef.current : undefined,
             context: {
               sandboxId: sandboxData?.sandboxId,
@@ -3321,7 +3325,7 @@ Focus on the key sections and content, making it clean and modern.`;
           Inicio
         </Link>
         <div className="flex items-center gap-2">
-          {/* Model Selector */}
+          <ModelSelectorGate>
           <ModelSelect
             value={aiModel}
             onChange={(model) => {
@@ -3335,6 +3339,7 @@ Focus on the key sections and content, making it clean and modern.`;
             }}
             className="min-w-[220px]"
           />
+          </ModelSelectorGate>
           <button 
             onClick={() => createSandbox()}
             className="mxr-btn"
@@ -3891,6 +3896,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
 
           <div className="p-4 border-t border-border bg-background-base">
+            <ModelSelectorGate>
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-[11px] text-black-alpha-48">Modelo</span>
               <ModelSelect
@@ -3906,6 +3912,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 }}
               />
             </div>
+            </ModelSelectorGate>
             <HeroInput
               value={aiChatInput}
               onChange={setAiChatInput}

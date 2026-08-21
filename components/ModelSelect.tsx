@@ -136,6 +136,9 @@ export default function ModelSelect({
 }
 
 export function getStoredModel() {
+  if (!appConfig.ui.showModelSelector) {
+    return appConfig.ai.lockedModel;
+  }
   if (typeof window === 'undefined') return appConfig.ai.defaultModel;
   return localStorage.getItem('selectedModel') || appConfig.ai.defaultModel;
 }

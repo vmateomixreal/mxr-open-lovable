@@ -64,7 +64,8 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false, images = [] } = await request.json();
+    const { prompt, model: requestedModel = appConfig.ai.defaultModel, context, isEdit = false, images = [] } = await request.json();
+    const model = appConfig.ui.showModelSelector ? requestedModel : appConfig.ai.lockedModel;
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);

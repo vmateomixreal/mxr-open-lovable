@@ -13,6 +13,7 @@ import { HeaderProvider } from "@/components/shared/header/HeaderContext";
 // Import hero section components
 import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
 import ModelSelect, { getStoredModel } from "@/components/ModelSelect";
+import { ModelSelectorGate } from "@/components/ModelSelectorGate";
 import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 
 interface SearchResult {
@@ -101,7 +102,7 @@ export default function HomePage() {
       setPendingPromptImages(promptImages);
       sessionStorage.setItem('directPrompt', promptText);
       sessionStorage.setItem('directPromptMode', 'true');
-      sessionStorage.setItem('selectedModel', selectedModel);
+      sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
       sessionStorage.setItem('autoStart', 'true');
       sessionStorage.removeItem('selectedStyle');
       sessionStorage.removeItem('additionalInstructions');
@@ -122,7 +123,7 @@ export default function HomePage() {
       // Wait for fade animation
       setTimeout(() => {
         sessionStorage.setItem('targetUrl', selectedResult.url);
-        sessionStorage.setItem('selectedModel', selectedModel);
+        sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
         sessionStorage.setItem('autoStart', 'true');
         if (selectedResult.markdown) {
           sessionStorage.setItem('siteMarkdown', selectedResult.markdown);
@@ -137,7 +138,7 @@ export default function HomePage() {
       if (extendBrandStyles) {
         // Brand extension mode - extract brand styles and use them with the prompt
         sessionStorage.setItem('targetUrl', inputValue);
-        sessionStorage.setItem('selectedModel', selectedModel);
+        sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
         sessionStorage.setItem('autoStart', 'true');
         sessionStorage.setItem('brandExtensionMode', 'true');
         sessionStorage.setItem('brandExtensionPrompt', additionalInstructions || '');
@@ -145,7 +146,7 @@ export default function HomePage() {
       } else {
         // Normal clone mode
         sessionStorage.setItem('targetUrl', inputValue);
-        sessionStorage.setItem('selectedModel', selectedModel);
+        sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
         sessionStorage.setItem('autoStart', 'true');
         router.push('/generation');
       }
@@ -517,6 +518,7 @@ export default function HomePage() {
                         </button>
                       </div>
                     </div>
+                    <ModelSelectorGate>
                     <div className="py-8 grid grid-cols-2 items-center gap-12">
                       <div className="text-xs font-medium text-black-alpha-72">
                         Modelo
@@ -525,6 +527,7 @@ export default function HomePage() {
                         <ModelSelect value={selectedModel} onChange={setSelectedModel} />
                       </div>
                     </div>
+                    </ModelSelectorGate>
                   </div>
                 </div>
 

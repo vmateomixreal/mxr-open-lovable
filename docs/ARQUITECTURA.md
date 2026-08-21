@@ -546,6 +546,8 @@ Para conservar trabajo: usar **export zip** (`/api/create-zip`) antes de que exp
 | Servicio | Para qué | Variables |
 |----------|----------|-----------|
 | **OpenRouter** | Todos los LLMs | `OPEN_ROUTER_API_KEY` (obligatoria). Opcional: `OPEN_ROUTER_HTTP_REFERER`, `OPEN_ROUTER_APP_TITLE` |
+| **Selector de modelos** | Mostrar/ocultar UI de modelo | `NEXT_PUBLIC_ENABLE_MODEL_SELECTOR` (`true`/`false`). Si es `false`, siempre `anthropic/claude-sonnet-5` |
+| **Modelo por defecto** | Solo si el selector está activo | `NEXT_PUBLIC_DEFAULT_MODEL` (opcional) |
 | **Firecrawl** | Scrapper | `FIRECRAWL_API_KEY` |
 | **Morph** | Fast apply en ediciones | `MORPH_API_KEY` |
 | **E2B** | Sandbox | `SANDBOX_PROVIDER=e2b`, `E2B_API_KEY` |

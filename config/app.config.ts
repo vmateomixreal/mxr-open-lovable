@@ -1,6 +1,21 @@
 // Application Configuration
 // This file contains all configurable settings for the application
 
+/** When the model selector is off, the app always uses this OpenRouter slug. */
+export const LOCKED_AI_MODEL = 'anthropic/claude-sonnet-5';
+
+/**
+ * Must use a static `process.env.NEXT_PUBLIC_*` access so Next.js inlines it
+ * into the client bundle. Dynamic `process.env[name]` is undefined on the client.
+ */
+function isModelSelectorEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_ENABLE_MODEL_SELECTOR;
+  if (raw == null || raw === '') return true;
+  return !['0', 'false', 'no', 'off'].includes(String(raw).trim().toLowerCase());
+}
+
+const showModelSelector = isModelSelectorEnabled();
+
 export const appConfig = {
   // Vercel Sandbox Configuration
   vercelSandbox: {
@@ -50,11 +65,17 @@ export const appConfig = {
   
   // AI Model Configuration (all models are served via OpenRouter)
   ai: {
-    // Default AI model
-    defaultModel: 'anthropic/claude-sonnet-4.6',
+    // Default AI model (forced to Claude Sonnet 5 when selector is disabled)
+    defaultModel: showModelSelector
+      ? (process.env.NEXT_PUBLIC_DEFAULT_MODEL || LOCKED_AI_MODEL)
+      : LOCKED_AI_MODEL,
+
+    /** Model used when NEXT_PUBLIC_ENABLE_MODEL_SELECTOR=false */
+    lockedModel: LOCKED_AI_MODEL,
     
     // Available models (OpenRouter slugs)
     availableModels: [
+      'anthropic/claude-sonnet-5',
       'anthropic/claude-sonnet-4.6',
       'anthropic/claude-opus-4.1',
       'openai/gpt-4.1',
@@ -65,6 +86,7 @@ export const appConfig = {
     
     // Model display names
     modelDisplayNames: {
+      'anthropic/claude-sonnet-5': 'Claude Sonnet 5',
       'anthropic/claude-sonnet-4.6': 'Claude Sonnet 4.6',
       'anthropic/claude-opus-4.1': 'Claude Opus 4.1',
       'openai/gpt-4.1': 'GPT-4.1',
@@ -75,6 +97,10 @@ export const appConfig = {
     
     // Model API configuration
     modelApiConfig: {
+      'anthropic/claude-sonnet-5': {
+        provider: 'openrouter',
+        model: 'anthropic/claude-sonnet-5'
+      },
       'anthropic/claude-sonnet-4.6': {
         provider: 'openrouter',
         model: 'anthropic/claude-sonnet-4.6'
@@ -128,8 +154,8 @@ export const appConfig = {
   
   // UI Configuration
   ui: {
-    // Show/hide certain UI elements
-    showModelSelector: true,
+    // Driven by NEXT_PUBLIC_ENABLE_MODEL_SELECTOR (default: true)
+    showModelSelector,
     showStatusIndicator: true,
     
     // Animation durations (milliseconds)
@@ -215,6 +241,14 @@ export function getConfig<K extends keyof typeof appConfig>(key: K): typeof appC
 // Helper to get nested config values
 export function getConfigValue(path: string): any {
   return path.split('.').reduce((obj, key) => obj?.[key], appConfig as any);
+}
+
+/** Effective model for the current UI mode (respects locked selector). */
+export function getEffectiveAiModel(preferred?: string | null): string {
+  if (!appConfig.ui.showModelSelector) {
+    return appConfig.ai.lockedModel;
+  }
+  return preferred || appConfig.ai.defaultModel;
 }
 
 export default appConfig;
