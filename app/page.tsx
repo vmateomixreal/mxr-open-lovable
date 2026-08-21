@@ -585,7 +585,7 @@ export default function HomePage() {
                             value={additionalInstructions}
                             onChange={(e) => setAdditionalInstructions(e.target.value)}
                             placeholder="Describe la nueva funcionalidad que quieres crear con los estilos de esta marca..."
-                            className="w-full px-4 py-10 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 placeholder:text-gray-400 min-h-[80px] resize-none"
+                            className="w-full px-4 py-10 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-[var(--mx-menu)] focus:outline-none focus:ring-1 focus:ring-[var(--mx-menu)] placeholder:text-gray-400 min-h-[80px] resize-none"
                           />
                         </div>
                       )}
@@ -777,7 +777,7 @@ export default function HomePage() {
                                   e.stopPropagation();
                                   handleSubmit(result);
                                 }}
-                                className="bg-orange-500 hover:bg-orange-600 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 gap-2 text-white active:scale-[0.995]"
+                                className="bg-[var(--mx-menu)] hover:opacity-95 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 gap-2 text-white active:scale-[0.995]"
                               >
                                 <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />
                                 <svg 

@@ -76,7 +76,7 @@
 }
 
 .mx a{color:var(--mx-tinta);text-decoration:none;transition:color .2s}
-.mx a:hover{color:var(--mx-acento)}
+.mx a:hover{color:var(--mx-menu)}
 .mx img{display:block;max-width:100%;height:auto}
 .mx ul,.mx ol{list-style:none;margin:0;padding:0}
 
