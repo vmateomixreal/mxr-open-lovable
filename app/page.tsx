@@ -8,8 +8,6 @@ import { toast } from "sonner";
 import { filesToPromptImages, MAX_PROMPT_IMAGES, setPendingPromptImages } from "@/lib/prompt-images";
 import { PromptImageAttachButton, PromptImageThumbnails } from "@/components/PromptImageAttachments";
 
-// Import shared components
-import { Connector } from "@/components/shared/layout/curvy-rect";
 import { HeaderProvider } from "@/components/shared/header/HeaderContext";
 
 // Import hero section components
@@ -243,54 +241,36 @@ export default function HomePage() {
 
   return (
     <HeaderProvider>
-      <div className="min-h-screen relative">
+      <div className="mx-home-shell">
         <div className="meshBg" aria-hidden>
           <div className="meshTint" />
         </div>
 
-        {/* Hero Section */}
-        <section className="overflow-x-clip relative z-[1]" id="home-hero">
-          <div className="pt-48 lg:pt-160 pb-115 relative" id="hero-content">
-            <div className="relative container px-16">
-              <HomeHeroTitle />
-              <p className="text-center text-body-large text-[var(--mxr-gray-text)]">
-                {scrapperEnabled
-                  ? 'Clona o reimagina cualquier web, en segundos.'
-                  : 'Describe una app y genérala desde cero, en segundos.'}
-              </p>
+        <section className="mx-home-hero overflow-x-clip" id="home-hero">
+          <div className="mx-contenedor mx-entra" style={{ ["--mx-orden" as string]: 0 }}>
+            <HomeHeroTitle />
+            <p className="mx-texto--guia text-center mx-auto mt-[clamp(18px,2vw,28px)]">
+              {scrapperEnabled
+                ? 'Clona o reimagina cualquier web con calidad de producto, en segundos.'
+                : 'Describe tu idea y genera una app React lista para iterar, en segundos.'}
+            </p>
+            <div className="flex justify-center mt-[clamp(20px,2.4vw,32px)]">
               <button
                 type="button"
-                className={`mxr-btn mt-8 mx-auto block ${
-                  scrapperEnabled ? '' : 'mxr-btn-primary'
-                }`}
+                className={`mx-btn ${scrapperEnabled ? 'mx-btn--claro' : 'mx-btn--oscuro'} mx-btn--compacto`}
                 onClick={toggleScrapper}
               >
-                {scrapperEnabled ? 'Scrapper activado' : 'Scrapper desactivado · modo prompt'}
+                {scrapperEnabled ? 'Scrapper activado' : 'Modo prompt'}
               </button>
             </div>
           </div>
+        </section>
 
           {/* Mini Playground Input */}
-          <div className="container lg:contents !p-16 relative -mt-90">
-            <div className="absolute top-0 left-[calc(50%-50vw)] w-screen h-1 bg-border-faint lg:hidden" />
-            <div className="absolute bottom-0 left-[calc(50%-50vw)] w-screen h-1 bg-border-faint lg:hidden" />
-            <Connector className="-top-10 -left-[10.5px] lg:hidden" />
-            <Connector className="-top-10 -right-[10.5px] lg:hidden" />
-            <Connector className="-bottom-10 -left-[10.5px] lg:hidden" />
-            <Connector className="-bottom-10 -right-[10.5px] lg:hidden" />
+          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(48px,6vw,96px)] -mt-4">
+            <div className="mx-home-input mx-entra" style={{ ["--mx-orden" as string]: 1 }}>
 
-            {/* Hero Input Component */}
-            <div className="max-w-552 mx-auto z-[11] lg:z-[2]">
-              <div className="rounded-20 -mt-30 lg:-mt-30">
-                <div
-                  className="bg-white rounded-20 relative z-10"
-                  style={{
-                    boxShadow:
-                      "0px 0px 44px 0px rgba(0, 0, 0, 0.02), 0px 88px 56px -20px rgba(0, 0, 0, 0.03), 0px 56px 56px -20px rgba(0, 0, 0, 0.02), 0px 32px 32px -20px rgba(0, 0, 0, 0.03), 0px 16px 24px -12px rgba(0, 0, 0, 0.03), 0px 0px 0px 1px rgba(0, 0, 0, 0.05), 0px 0px 0px 10px #F9F9F9",
-                  }}
-                >
-
-                <div className={`p-[28px] flex gap-12 w-full relative bg-white rounded-20 ${scrapperEnabled ? 'items-center' : 'items-start'}`}>
+                <div className={`mx-home-input__body ${scrapperEnabled ? 'items-center' : 'items-start'}`}>
                   {/* Show different UI when search results are displayed */}
                   {hasSearched && searchResults.length > 0 && !isFadingOut ? (
                     <>
@@ -523,7 +503,7 @@ export default function HomePage() {
                         >
                           <div
                             className={`overlay transition-opacity ${scrapperEnabled ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ backgroundColor: '#4B5CF0' }}
+                            style={{ backgroundColor: 'var(--mx-menu)' }}
                           />
                           <div
                             className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
@@ -615,19 +595,15 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                </div>
-
-              </div>
             </div>
           </div>
-        </section>
 
         {/* Full-width oval carousel section */}
         {scrapperEnabled && showSearchTiles && hasSearched && (
-          <section className={`carousel-section relative w-full overflow-hidden mt-32 mb-32 transition-opacity duration-500 ${
+          <section className={`carousel-section mx-seccion--alt relative w-full overflow-hidden mt-16 mb-16 transition-opacity duration-500 ${
             isFadingOut ? 'opacity-0' : 'opacity-100'
           }`}>
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white rounded-[50%] transform scale-x-150 -translate-y-24" />
+            <div className="absolute inset-0 bg-[var(--mx-fondo-alt)] rounded-[50%] transform scale-x-150 -translate-y-24 opacity-80" />
             
             {isSearching ? (
               // Loading state with animated scrolling skeletons

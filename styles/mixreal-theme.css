@@ -1,23 +1,24 @@
-/* App chrome — editor-inspired UI */
+/* App chrome — Mixreal premium UI (built on mixreal-estilos.css tokens) */
 
 :root {
   color-scheme: light;
 }
 
-body {
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  color: var(--accent-black);
-  background-color: #ffffff;
+body.mx {
+  font-family: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  color: var(--mx-tinta);
+  background-color: var(--mx-fondo);
+  min-height: 100vh;
 }
 
-/* Mesh gradient background */
+/* Soft ambient background (Mixreal base, no loud mesh) */
 .meshBg {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: #ffffff;
+  background-color: var(--mx-fondo);
   overflow: hidden;
 }
 
@@ -25,131 +26,140 @@ body {
   position: absolute;
   inset: 0;
   opacity: 1;
-  will-change: opacity;
   background-image:
-    radial-gradient(at 38% 32%, rgba(46, 155, 255, 0.38) 0px, transparent 38%),
-    radial-gradient(at 58% 58%, rgba(110, 139, 255, 0.38) 0px, transparent 38%),
-    radial-gradient(at 72% 45%, rgba(77, 195, 255, 0.38) 0px, transparent 35%),
-    radial-gradient(at 25% 55%, rgba(110, 139, 255, 0.38) 0px, transparent 38%),
-    radial-gradient(at 85% 70%, rgba(214, 240, 255, 0.38) 0px, transparent 32%);
-  background-size: 220% 220%;
-  animation: mxrMeshMoveGlobal 8s ease-in-out infinite;
+    radial-gradient(at 18% 12%, color-mix(in srgb, var(--mx-menu) 14%, transparent) 0px, transparent 42%),
+    radial-gradient(at 82% 18%, color-mix(in srgb, var(--mx-acento) 10%, transparent) 0px, transparent 40%),
+    radial-gradient(at 50% 88%, color-mix(in srgb, var(--mx-violeta) 10%, transparent) 0px, transparent 45%);
+  background-size: 160% 160%;
+  animation: mxrMeshMoveGlobal 14s var(--mx-curva) infinite;
 }
 
 @keyframes mxrMeshMoveGlobal {
   0%,
   100% {
-    background-position: 0% 50%;
+    background-position: 0% 40%;
   }
   50% {
-    background-position: 100% 50%;
+    background-position: 100% 60%;
   }
 }
 
-/* Scrollbars (Mixreal) */
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 14px;
+  width: 12px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fdfdfd;
+  background: var(--mx-fondo-alt);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4666fa;
+  background: var(--mx-menu);
   border-radius: 8px;
-  border: 3px solid #fdfdfd;
+  border: 3px solid var(--mx-fondo-alt);
   min-height: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4B5CF0;
+  background: color-mix(in srgb, var(--mx-menu) 85%, #000);
 }
 
-/* Editor-like buttons */
+/* Buttons — map legacy mxr-btn to Mixreal pill language */
 .mxr-btn {
-  color: #555;
-  background-color: #ddd;
-  border: 0;
-  margin: 0;
-  padding: 5px 8px;
-  font-size: 12px;
-  font-family: Helvetica, Arial, sans-serif;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   outline: none;
+  color: var(--mx-tinta);
+  background: var(--mx-tarjeta-alt);
+  box-shadow: var(--mx-sombra-media);
+  transition: background 0.2s, transform 0.2s, color 0.2s;
 }
 
 .mxr-btn:hover {
-  background-color: #fff;
+  background: #fff;
+  transform: translateY(-1px);
 }
 
 .mxr-btn.selected,
 .mxr-btn-primary {
-  background-color: var(--mxr-blue);
+  background: #26262a;
   color: #fff;
+  box-shadow: var(--mx-sombra-alta);
 }
 
-.mxr-btn-primary:hover {
-  background-color: var(--heat-200);
+.mxr-btn-primary:hover,
+.mxr-btn.selected:hover {
+  background: var(--mx-acento);
   color: #fff;
 }
 
 .mxr-tab {
-  background: #fff;
-  color: #222;
-  border: 2px solid var(--mxr-blue);
-  border-radius: 12px;
-  font-family: Helvetica, Arial, sans-serif;
-  font-weight: 400;
-  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--mx-tinta);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: var(--mx-sombra-media);
 }
 
 .mxr-tab.selected {
-  background: var(--mxr-blue);
+  background: var(--mx-menu);
   color: #fff;
-  font-weight: 550;
-  box-shadow: 0 2px 8px 0 rgba(75, 92, 240, 0.10);
+  font-weight: 600;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mx-menu) 35%, transparent);
 }
 
 .mxr-tab:not(.selected):hover {
-  background: var(--mxr-blue-soft);
+  background: #fff;
+  transform: translateY(-1px);
 }
 
 .mxr-panel {
-  background: var(--panel-bg);
-  color: var(--mxr-gray-muted);
-  border-top: 1px solid #ccc;
+  background: var(--mx-fondo-alt);
+  color: var(--mx-suave);
+  border-top: 1px solid var(--mx-linea-suave);
 }
 
 .mxr-menubar {
-  background: var(--menubar-bg);
-  border-bottom: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid color-mix(in srgb, var(--mx-linea) 70%, transparent);
 }
 
 .mxr-input,
 .mxr-select {
   border: 1px solid transparent;
-  color: #444;
-  font-family: Helvetica, Arial, sans-serif;
+  color: var(--mx-tinta);
+  font-family: inherit;
   outline: none;
 }
 
 .mxr-select {
-  color: #666;
-  background-color: #ddd;
+  color: var(--mx-suave);
+  background-color: var(--mx-tarjeta-alt);
   border: 0;
-  text-transform: uppercase;
+  border-radius: 999px;
   cursor: pointer;
-  padding: 5px 8px;
-  font-size: 12px;
-}
-
-.mxr-select.normal-case {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
   text-transform: none;
 }
 
@@ -158,67 +168,191 @@ body {
 }
 
 .mxr-card {
-  background: #fff;
-  border: 1px solid #ccc;
-  box-shadow: none;
+  background: var(--mx-tarjeta);
+  border: none;
+  border-radius: var(--mx-radio);
+  box-shadow: var(--mx-sombra);
 }
 
-/* Soften flame/pixi overlays when present */
 #home-hero .fc-decoration,
 #home-hero canvas {
-  opacity: 0.25;
-  filter: hue-rotate(200deg) saturate(0.7);
+  opacity: 0.18;
+  filter: hue-rotate(200deg) saturate(0.65);
 }
 
-/* Loading overlay (editor style) */
 .loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--mx-oscuro) 72%, transparent);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 10000;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(8px);
 }
 
 .loading-spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid #fff;
+  width: 56px;
+  height: 56px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top: 3px solid #fff;
   border-radius: 50%;
-  animation: mxr-spin 1s linear infinite;
+  animation: mxr-spin 0.9s linear infinite;
   margin-bottom: 20px;
 }
 
 @keyframes mxr-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .model-item {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+  background: var(--mx-tarjeta);
+  border-radius: var(--mx-radio-medio);
+  box-shadow: var(--mx-sombra);
   padding: 24px 12px 16px;
-  color: #222;
+  color: var(--mx-tinta);
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.2s;
   border: none;
 }
 
 .model-item:hover {
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.14);
-  transform: scale(1.02);
-  background: #f6f8fa;
+  box-shadow: var(--mx-sombra-alta);
+  transform: translateY(-2px);
+  background: #fff;
 }
 
-/* Search result tiles on home */
 #home-hero .rounded-20 {
-  border-radius: 16px;
+  border-radius: var(--mx-radio);
 }
 
-input, textarea, select, button {
-  font-family: Helvetica, Arial, sans-serif;
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+}
+
+/* —— Workspace / generation —— */
+.mx-workspace {
+  color: var(--mx-tinta);
+}
+
+.mx-workspace__top {
+  height: auto;
+  min-height: 64px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 30px rgba(28, 28, 30, 0.06);
+}
+
+.mx-workspace__chat {
+  flex: 1 1 42%;
+  max-width: min(560px, 46vw);
+  min-width: 360px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--mx-linea-suave);
+  background: color-mix(in srgb, var(--mx-tarjeta) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 1100px) {
+  .mx-workspace__chat {
+    max-width: 420px;
+    min-width: 300px;
+  }
+}
+
+.mx-workspace__preview {
+  flex: 1 1 58%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--mx-fondo-alt) 80%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.mx-chat-bubble {
+  border-radius: var(--mx-radio-medio);
+  padding: 14px 16px;
+  box-shadow: var(--mx-sombra-media);
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.mx-chat-bubble--user {
+  background: var(--mx-menu);
+  color: #fff;
+  margin-left: auto;
+  max-width: 88%;
+}
+
+.mx-chat-bubble--ai {
+  background: var(--mx-tarjeta);
+  color: var(--mx-tinta);
+  margin-right: auto;
+  max-width: 92%;
+}
+
+.mx-chat-bubble--system {
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-suave);
+  margin-right: auto;
+  max-width: 92%;
+  font-size: 13px;
+}
+
+.mx-home-shell {
+  position: relative;
+  min-height: 100vh;
+}
+
+.mx-home-hero {
+  position: relative;
+  z-index: 1;
+  padding: clamp(72px, 10vw, 120px) clamp(24px, 7vw, 140px) clamp(40px, 5vw, 64px);
+}
+
+.mx-home-input {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--mx-radio);
+  box-shadow: 0 18px 44px rgba(28, 28, 30, 0.1);
+  overflow: hidden;
+}
+
+.mx-home-input__body {
+  padding: clamp(20px, 2.4vw, 28px);
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+}
+
+.mx-home-input__footer {
+  padding: 0 clamp(20px, 2.4vw, 28px) 16px;
+  border-top: 1px solid var(--mx-linea);
+  margin-top: 0;
+}
+
+.mx-home-input__footer-inner {
+  padding-top: 8px;
 }

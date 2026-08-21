@@ -1,0 +1,392 @@
+/* ==========================================================================
+   MIXREAL · SISTEMA DE ESTILOS
+   Extraído de las 12 secciones diseñadas. Un solo archivo, sin dependencias.
+
+   Cómo usarlo:
+     1. Sube este archivo a tu web y enlázalo DESPUÉS de tu CSS actual.
+     2. Carga la tipografía Urbanist (ver bloque @import / <link> más abajo).
+     3. Aplica las clases .mx-* a tu marcado, o deja que la IA lo haga
+        siguiendo el archivo de instrucciones que acompaña a este CSS.
+
+   Todo el dimensionado usa clamp(): escala de móvil a escritorio sin
+   puntos de ruptura bruscos. No hay media queries de tamaño salvo las
+   dos estrictamente necesarias (rejillas y reducción de movimiento).
+   ========================================================================== */
+
+/* ==========================================================================
+   1 · VARIABLES
+   Cambia estos valores y cambia toda la web. No toques nada más.
+   ========================================================================== */
+:root{
+  /* Fondos */
+  --mx-fondo:        #ecedf0;   /* fondo base de sección */
+  --mx-fondo-alt:    #f7f7f8;   /* fondo de sección alterna, más claro */
+  --mx-tarjeta:      #ffffff;   /* tarjeta sobre fondo base */
+  --mx-tarjeta-alt:  #f1f2f4;   /* tarjeta sobre fondo alterno */
+  --mx-oscuro:       #1c1c1e;   /* panel oscuro */
+  --mx-oscuro-alto:  #2a2a2d;   /* extremo claro del degradado oscuro */
+  --mx-oscuro-bajo:  #141416;   /* extremo oscuro del degradado */
+
+  /* Texto */
+  --mx-tinta:        #1c1c1e;   /* texto principal */
+  --mx-tinta-fuerte: #0d0d0f;   /* titulares de tarjeta */
+  --mx-tinta-media:  #2c2c30;   /* titulares de sección */
+  --mx-suave:        #6a6a72;   /* párrafos secundarios */
+  --mx-tenue:        #8a8b90;   /* pies, notas */
+  --mx-sobre-oscuro: #ffffff;
+  --mx-suave-oscuro: rgba(255,255,255,.62);
+
+  /* Acentos */
+  --mx-acento:       #e8392a;   /* rojo Mixreal: hover, CTA, detalles */
+  --mx-menu:         #4a4ff5;   /* azul del logotipo: menú y estados activos */
+  --mx-violeta:      #5b3df5;   /* etiquetas y destacados */
+  --mx-azul:         #2196f3;   /* segundo destacado */
+  --mx-linea:        #e0e0e0;   /* separadores */
+  --mx-linea-suave:  #d3d5da;   /* trazos y bordes tenues */
+
+  /* Forma */
+  --mx-radio:        28px;      /* tarjetas grandes */
+  --mx-radio-medio:  22px;      /* tarjetas medianas */
+  --mx-radio-chico:  16px;      /* elementos pequeños */
+  --mx-radio-icono:  15px;      /* cuadrados de icono */
+
+  /* Sombras. Muy suaves a propósito: el diseño no lleva bordes duros. */
+  --mx-sombra:       0 2px 28px rgba(0,0,0,.055);
+  --mx-sombra-media: 0 4px 18px rgba(28,28,30,.05);
+  --mx-sombra-alta:  0 12px 28px rgba(28,28,30,.3);
+  --mx-sombra-icono: 0 8px 20px rgba(28,28,30,.2);
+
+  /* Movimiento */
+  --mx-curva:        cubic-bezier(.22,1,.36,1);
+  --mx-curva-suave:  cubic-bezier(.65,0,.35,1);
+}
+
+
+/* ==========================================================================
+   2 · BASE
+   ========================================================================== */
+.mx *,.mx *::before,.mx *::after{box-sizing:border-box}
+
+.mx{
+  font-family:'Urbanist',system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--mx-tinta);
+  background:var(--mx-fondo);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+.mx a{color:var(--mx-tinta);text-decoration:none;transition:color .2s}
+.mx a:hover{color:var(--mx-acento)}
+.mx img{display:block;max-width:100%;height:auto}
+.mx ul,.mx ol{list-style:none;margin:0;padding:0}
+
+
+/* ==========================================================================
+   3 · SECCIONES Y CONTENEDOR
+   El padding lateral es generoso: es una de las señas del diseño.
+   ========================================================================== */
+.mx-seccion{
+  background:var(--mx-fondo);
+  padding:clamp(56px,7vw,104px) clamp(24px,7vw,140px);
+}
+.mx-seccion--alt{background:var(--mx-fondo-alt)}
+.mx-seccion--aire{padding-inline:clamp(28px,9vw,160px)}   /* aún más aire */
+.mx-seccion--ancha{padding-inline:clamp(20px,5vw,72px)}   /* menos aire */
+
+.mx-contenedor{max-width:1420px;margin:0 auto}
+.mx-contenedor--estrecho{max-width:1180px}
+.mx-contenedor--amplio{max-width:1480px}
+
+
+/* ==========================================================================
+   4 · TIPOGRAFÍA
+   ========================================================================== */
+.mx-h1{
+  font-size:clamp(40px,7.6vw,104px);font-weight:700;line-height:.97;
+  letter-spacing:-.035em;color:var(--mx-tinta-media);text-wrap:balance;
+}
+.mx-h2{
+  font-size:clamp(32px,4.8vw,66px);font-weight:700;line-height:1.04;
+  letter-spacing:-.033em;color:var(--mx-tinta-media);text-wrap:balance;
+}
+.mx-h2--chico{font-size:clamp(29px,3.9vw,52px);line-height:1.06;letter-spacing:-.032em;color:var(--mx-tinta-fuerte)}
+.mx-h3{
+  font-size:clamp(24px,2.9vw,38px);font-weight:700;
+  letter-spacing:-.026em;color:var(--mx-tinta-fuerte);
+}
+.mx-h3--tarjeta{font-size:clamp(21px,2.1vw,30px);line-height:1.14;letter-spacing:-.022em}
+.mx-h4{font-size:clamp(16px,1.4vw,19px);font-weight:700;letter-spacing:-.014em;color:var(--mx-tinta-fuerte)}
+
+.mx-texto{
+  font-size:clamp(13.5px,1.05vw,15.5px);line-height:1.7;
+  color:var(--mx-suave);text-wrap:pretty;
+}
+.mx-texto--largo{font-size:clamp(13px,1vw,14.5px);line-height:1.75}
+.mx-texto--guia{font-size:clamp(14px,1.25vw,18px);line-height:1.62;max-width:34em}
+.mx-texto--pie{font-size:clamp(12.5px,.95vw,14px);color:var(--mx-tenue);font-weight:500}
+
+
+/* ==========================================================================
+   5 · ETIQUETA (la píldora sobre cada titular)
+   Es el elemento que más se repite en el diseño. Nunca repite el titular:
+   dice otra cosa, más corta.
+   ========================================================================== */
+.mx-etiqueta{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--mx-tarjeta);border-radius:999px;
+  padding:clamp(8px,1vw,11px) clamp(16px,1.6vw,22px);
+  font-size:clamp(12.5px,1.05vw,15px);font-weight:600;
+  color:var(--mx-violeta);box-shadow:var(--mx-sombra);
+}
+.mx-etiqueta::before{
+  content:"";width:7px;height:7px;border-radius:50%;
+  background:currentColor;flex:0 0 auto;
+}
+.mx-etiqueta--acento{color:var(--mx-acento)}
+.mx-etiqueta--plana{background:#f0f0f2;box-shadow:0 2px 10px rgba(28,28,30,.05);padding:8px 17px;font-size:14px}
+
+
+/* ==========================================================================
+   6 · CABECERA DE SECCIÓN
+   ========================================================================== */
+.mx-cabecera{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:clamp(18px,2.2vw,30px);margin-bottom:clamp(38px,5vw,76px);
+}
+.mx-cabecera--izq{align-items:flex-start;text-align:left}
+
+
+/* ==========================================================================
+   7 · TARJETAS
+   ========================================================================== */
+.mx-tarjeta{
+  background:var(--mx-tarjeta);border-radius:var(--mx-radio);
+  padding:clamp(26px,3vw,44px);box-shadow:var(--mx-sombra);
+}
+.mx-tarjeta--gris{background:var(--mx-tarjeta-alt);box-shadow:var(--mx-sombra-media)}
+.mx-tarjeta--compacta{border-radius:var(--mx-radio-medio);padding:clamp(22px,2.2vw,32px)}
+
+/* Panel oscuro: el contraste fuerte del sistema. Úsalo una vez por página. */
+.mx-panel-oscuro{
+  position:relative;overflow:hidden;
+  background:var(--mx-oscuro);
+  background-image:linear-gradient(150deg,var(--mx-oscuro-alto) 0%,var(--mx-oscuro-bajo) 62%);
+  border-radius:var(--mx-radio);padding:clamp(26px,3vw,44px);
+  color:var(--mx-sobre-oscuro);
+}
+.mx-panel-oscuro .mx-texto{color:var(--mx-suave-oscuro)}
+
+/* Cuadrado de icono. El icono va dentro como SVG de 22-24px, trazo 1.6-1.7. */
+.mx-icono{
+  flex:0 0 auto;display:grid;place-items:center;
+  width:clamp(52px,4.4vw,62px);aspect-ratio:1;
+  border-radius:var(--mx-radio-icono);
+  background:#26262a;color:#fff;box-shadow:var(--mx-sombra-icono);
+}
+.mx-icono--chico{width:44px;border-radius:50%;background:var(--mx-oscuro)}
+
+
+/* ==========================================================================
+   8 · BOTONES
+   Siempre píldora completa. Nunca esquinas suaves a medias.
+   ========================================================================== */
+.mx-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:54px;padding:0 clamp(24px,2.4vw,34px);
+  border:none;border-radius:999px;
+  font-family:inherit;font-size:clamp(14px,1.1vw,16px);font-weight:700;
+  cursor:pointer;text-decoration:none;
+  transition:background .2s,transform .2s,color .2s;
+}
+.mx-btn--oscuro{background:#26262a;color:#fff;box-shadow:var(--mx-sombra-alta)}
+.mx-btn--oscuro:hover{background:var(--mx-acento);color:#fff;transform:translateY(-2px)}
+
+.mx-btn--claro{
+  background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.9);
+  color:var(--mx-tinta);box-shadow:0 8px 22px rgba(28,28,30,.12);
+}
+.mx-btn--claro:hover{background:#fff;transform:translateY(-2px)}
+
+.mx-btn--compacto{min-height:46px;padding:0 clamp(18px,1.8vw,26px);font-size:clamp(13px,1.02vw,15px)}
+
+/* Chip informativo, no clicable */
+.mx-chip{
+  display:inline-flex;align-items:center;
+  background:#3a3a40;color:#fff;border-radius:999px;
+  padding:11px 19px;font-size:13.5px;font-weight:600;
+}
+
+
+/* ==========================================================================
+   9 · CABECERA FLOTANTE (pastilla de cristal)
+   ========================================================================== */
+.mx-nav{
+  position:relative;display:flex;align-items:center;
+  gap:clamp(10px,1.8vw,30px);max-width:100%;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid rgba(255,255,255,.7);border-radius:999px;
+  padding:clamp(8px,.8vw,10px) clamp(8px,.8vw,10px) clamp(8px,.8vw,10px) clamp(16px,1.8vw,26px);
+  box-shadow:0 8px 30px rgba(28,28,30,.1);
+}
+.mx-nav__lista{display:flex;align-items:center;gap:clamp(10px,1.4vw,24px);font-size:clamp(13px,1.02vw,15px)}
+.mx-nav__item{position:relative}
+
+/* El enlace del menú: el color entra por la izquierda recortado al texto.
+   El truco es un degradado de dos mitades al 200% de ancho, desplazado. */
+.mx-nav__enlace{
+  display:block;padding:6px 2px;white-space:nowrap;font-weight:500;
+  background-image:linear-gradient(90deg,var(--mx-menu) 0 50%,#4a4a4e 50% 100%);
+  background-size:200% 100%;background-position:100% 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  transition:background-position .42s var(--mx-curva-suave);
+}
+.mx-nav__item:hover>.mx-nav__enlace,
+.mx-nav__item:focus-within>.mx-nav__enlace,
+.mx-nav__item.is-activo>.mx-nav__enlace{background-position:0 0}
+
+/* El subrayado crece desde la izquierda y se recoge hacia la derecha.
+   Con width no se puede: hay que cambiar el ancla, y el ancla no se anima.
+   Con scaleX sí, porque transform-origin solo cambia en los extremos. */
+.mx-nav__barra{
+  position:absolute;left:2px;right:2px;bottom:0;height:2px;border-radius:2px;
+  background:var(--mx-menu);pointer-events:none;
+  transform:scaleX(0);transform-origin:right;
+  transition:transform .42s var(--mx-curva-suave);
+}
+.mx-nav__item:hover>.mx-nav__barra,
+.mx-nav__item:focus-within>.mx-nav__barra,
+.mx-nav__item.is-activo>.mx-nav__barra{transform:scaleX(1);transform-origin:left}
+
+/* Desplegable */
+.mx-nav__sub{
+  position:absolute;top:calc(100% + 18px);left:50%;
+  transform:translateX(-50%) translateY(-6px);min-width:230px;
+  background:rgba(255,255,255,.86);
+  backdrop-filter:blur(22px) saturate(170%);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid rgba(255,255,255,.8);border-radius:var(--mx-radio-medio);
+  padding:10px;box-shadow:0 18px 44px rgba(28,28,30,.16);
+  display:flex;flex-direction:column;gap:2px;
+  opacity:0;visibility:hidden;
+  transition:opacity .2s,transform .2s,visibility .2s;
+}
+/* Puente invisible: el desplegable no se cierra al cruzar el hueco. */
+.mx-nav__sub::before{content:"";position:absolute;left:0;right:0;top:-18px;height:18px}
+.mx-nav__item:hover>.mx-nav__sub,
+.mx-nav__item:focus-within>.mx-nav__sub{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+
+.mx-nav__subenlace{
+  display:flex;align-items:center;min-height:42px;padding:0 14px;
+  border-radius:14px;font-size:14px;font-weight:500;white-space:nowrap;
+  background-image:linear-gradient(90deg,var(--mx-menu) 0 50%,#4a4a4e 50% 100%);
+  background-size:200% 100%;background-position:100% 0;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  transition:background-position .34s var(--mx-curva-suave),background-color .18s;
+}
+.mx-nav__subenlace:hover,.mx-nav__subenlace:focus-visible{
+  background-position:0 0;background-color:rgba(74,79,245,.07);
+}
+
+
+/* ==========================================================================
+   10 · REJILLAS
+   ========================================================================== */
+.mx-rejilla{display:grid;gap:clamp(18px,2.2vw,32px);grid-template-columns:1fr}
+@media (min-width:860px){
+  .mx-rejilla--2{grid-template-columns:1fr 1fr}
+  .mx-rejilla--3{grid-template-columns:repeat(3,1fr)}
+  .mx-rejilla--desigual{grid-template-columns:1.62fr 1fr}
+}
+
+
+/* ==========================================================================
+   11 · ACORDEÓN
+   Solo uno abierto. El abierto se pone oscuro y el signo pasa de + a −.
+   ========================================================================== */
+.mx-acordeon{display:flex;flex-direction:column;gap:clamp(12px,1.4vw,18px)}
+.mx-acordeon__item{
+  background:var(--mx-tarjeta);border-radius:var(--mx-radio-medio);
+  overflow:hidden;box-shadow:var(--mx-sombra);
+  transition:background .34s var(--mx-curva),color .34s var(--mx-curva);
+}
+.mx-acordeon__item.is-abierto{background:var(--mx-oscuro);color:#fff}
+.mx-acordeon__btn{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;padding:clamp(20px,2.2vw,30px) clamp(22px,2.4vw,34px);
+  background:none;border:none;cursor:pointer;text-align:left;
+  font-family:inherit;font-size:clamp(16px,1.5vw,21px);font-weight:600;
+  letter-spacing:-.015em;color:inherit;
+}
+.mx-acordeon__signo{
+  flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  border:1.4px solid currentColor;opacity:.55;
+  transition:transform .34s var(--mx-curva),opacity .2s;
+}
+.mx-acordeon__item.is-abierto .mx-acordeon__signo{opacity:1;transform:rotate(180deg)}
+.mx-acordeon__cuerpo{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .38s var(--mx-curva);
+}
+.mx-acordeon__item.is-abierto .mx-acordeon__cuerpo{grid-template-rows:1fr}
+.mx-acordeon__cuerpo>div{overflow:hidden}
+
+
+/* ==========================================================================
+   12 · CARRUSEL DE LOGOS
+   La pista lleva la lista duplicada y se desplaza un 50% exacto: al
+   reiniciarse el fotograma coincide y el bucle no salta.
+   ========================================================================== */
+.mx-logos{display:flex;flex-direction:column;gap:clamp(20px,3vw,44px)}
+.mx-logos__ventana{
+  position:relative;overflow:hidden;
+  --mx-fade:clamp(40px,20vw,300px);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 var(--mx-fade),#000 calc(100% - var(--mx-fade)),transparent 100%);
+          mask-image:linear-gradient(90deg,transparent 0,#000 var(--mx-fade),#000 calc(100% - var(--mx-fade)),transparent 100%);
+}
+.mx-logos__pista{
+  display:flex;width:max-content;will-change:transform;
+  animation:mx-marquesina 34s linear infinite;
+}
+.mx-logos__grupo{
+  display:flex;align-items:center;
+  gap:clamp(40px,5vw,80px);padding-right:clamp(40px,5vw,80px);
+}
+.mx-logos__grupo img{height:34px;width:auto;filter:grayscale(1);opacity:.55;transition:filter .25s,opacity .25s}
+.mx-logos__grupo li:hover img{filter:grayscale(0);opacity:1}
+@keyframes mx-marquesina{
+  from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-50%,0,0)}
+}
+
+
+/* ==========================================================================
+   13 · ENTRADA AL HACER SCROLL
+   Añade .is-visible con IntersectionObserver. El escalonado va por
+   --mx-orden: las tarjetas de una misma fila comparten número, así suben
+   por parejas.
+   ========================================================================== */
+.mx-entra{
+  opacity:0;transform:translateY(34px);
+  transition:opacity .62s var(--mx-curva),transform .62s var(--mx-curva);
+  transition-delay:calc(var(--mx-orden,0) * .17s);
+}
+.mx-entra.is-visible{opacity:1;transform:none}
+
+
+/* ==========================================================================
+   14 · ACCESIBILIDAD
+   ========================================================================== */
+.mx :focus-visible{outline:2px solid var(--mx-menu);outline-offset:3px;border-radius:4px}
+
+@media (prefers-reduced-motion:reduce){
+  .mx *,.mx *::before,.mx *::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+  .mx-entra{opacity:1;transform:none}
+  .mx-logos__pista{animation:none}
+  .mx-logos__ventana{overflow-x:auto}
+}

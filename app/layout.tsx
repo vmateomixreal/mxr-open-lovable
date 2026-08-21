@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google";
+import { Urbanist, Roboto_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import MxScrollReveal from "@/components/MxScrollReveal";
 
-const inter = Inter({ 
+const urbanist = Urbanist({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-urbanist",
+  weight: ["400", "500", "600", "700", "900"],
+  display: "swap",
 });
 
 const geistSans = localFont({
@@ -27,7 +30,7 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: "Creador de apps con IA",
-  description: "Crea e itera apps con IA.",
+  description: "Diseña, genera e itera apps React con IA. Vista previa en vivo.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -39,8 +42,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} ${robotoMono.variable}`} style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+    <html lang="es">
+      <body
+        className={`mx ${urbanist.variable} ${geistSans.variable} ${geistMono.variable} ${robotoMono.variable}`}
+        style={{ fontFamily: "var(--font-urbanist), Urbanist, system-ui, sans-serif" }}
+      >
+        <MxScrollReveal />
         {children}
       </body>
     </html>

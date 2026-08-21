@@ -678,10 +678,20 @@ El cliente mantiene espejo parcial en React (chat UI, `sandboxData`, progreso de
 
 ## 18. Design system y UI
 
-- Tema Mixreal: `styles/mixreal-theme.css`, `styles/design-system/colors.css`, `styles/main.css`, `colors.json`.  
-- UI de producto en **castellano** (landing, generation, toasts, toggle Scrapper).  
-- Componentes: `components/app/(home)/**`, `components/shared/**`, shadcn en `components/ui/**`.  
+- Sistema **Mixreal** canónico: `styles/mixreal-estilos.css` (variables `--mx-*`, tipografía Urbanist, componentes `.mx-*`).
+- Capa de producto / chrome de la app: `styles/mixreal-theme.css` (workspace, chat, home input, botones legacy `mxr-*` mapeados a píldoras Mixreal).
+- Tokens de compatibilidad: `styles/design-system/colors.css` (`--heat-100` = `--mx-menu`).
+- Instrucciones de marcado para IA: el kit externo `INSTRUCCIONES.md` + `mixreal-estilos.css` (fuente del sistema).
+- Animación de entrada: clase `.mx-entra` + `components/MxScrollReveal.tsx`.
+- UI de producto en **castellano** (landing, generation, toasts, Scrapper).
+- Componentes: `components/app/(home)/**`, `components/shared/**`, shadcn en `components/ui/**`.
 - Preview browser chrome: `components/shared/preview/web-browser.tsx`.
+
+### Workspace (generation)
+
+- Chat más amplio: `.mx-workspace__chat` (~42% / hasta 560px).
+- Preview: `.mx-workspace__preview`.
+- Burbujas: `.mx-chat-bubble--user|ai|system`.
 
 ---
 

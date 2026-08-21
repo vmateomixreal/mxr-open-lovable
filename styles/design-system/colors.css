@@ -1,25 +1,25 @@
-/* Mixreal Design System Colors */
+/* Mixreal Design System Colors — bridge tokens for legacy + Mixreal */
 :root {
   --white: #ffffff;
   --black: #000000;
 
-  /* Primary accent (Mixreal blue) — keeps heat-* tokens for compatibility */
-  --heat-4: rgba(75, 92, 240, 0.04);
-  --heat-8: rgba(75, 92, 240, 0.08);
-  --heat-12: rgba(75, 92, 240, 0.12);
-  --heat-16: rgba(75, 92, 240, 0.16);
-  --heat-20: rgba(75, 92, 240, 0.20);
-  --heat-40: rgba(75, 92, 240, 0.40);
-  --heat-90: rgba(75, 92, 240, 0.90);
-  --heat-100: #4B5CF0;
-  --heat-200: #3A4AD4;
+  /* Primary accent = Mixreal menu blue */
+  --heat-4: rgba(74, 79, 245, 0.04);
+  --heat-8: rgba(74, 79, 245, 0.08);
+  --heat-12: rgba(74, 79, 245, 0.12);
+  --heat-16: rgba(74, 79, 245, 0.16);
+  --heat-20: rgba(74, 79, 245, 0.20);
+  --heat-40: rgba(74, 79, 245, 0.40);
+  --heat-90: rgba(74, 79, 245, 0.90);
+  --heat-100: #4a4ff5;
+  --heat-200: #3a3fd4;
 
-  --accent-black: #222222;
+  --accent-black: #1c1c1e;
   --accent-white: #ffffff;
-  --accent-amethyst: #6176eb;
-  --accent-bluetron: #4B5CF0;
-  --accent-crimson: #eb3424;
-  --accent-link: #0088ff;
+  --accent-amethyst: #5b3df5;
+  --accent-bluetron: #4a4ff5;
+  --accent-crimson: #e8392a;
+  --accent-link: #2196f3;
 
   --black-alpha-1: rgba(0, 0, 0, 0.012);
   --black-alpha-2: rgba(0, 0, 0, 0.020);
@@ -27,47 +27,46 @@
   --black-alpha-4: rgba(0, 0, 0, 0.039);
   --black-alpha-5: rgba(0, 0, 0, 0.051);
   --black-alpha-6: rgba(0, 0, 0, 0.059);
-  --black-alpha-7: rgba(0, 0, 0, 0.071);
   --black-alpha-8: rgba(0, 0, 0, 0.078);
   --black-alpha-10: rgba(0, 0, 0, 0.102);
   --black-alpha-12: rgba(0, 0, 0, 0.122);
   --black-alpha-16: rgba(0, 0, 0, 0.161);
   --black-alpha-20: rgba(0, 0, 0, 0.200);
   --black-alpha-24: rgba(0, 0, 0, 0.239);
-  --black-alpha-32: rgba(34, 34, 34, 0.322);
-  --black-alpha-40: rgba(34, 34, 34, 0.400);
-  --black-alpha-48: rgba(34, 34, 34, 0.478);
-  --black-alpha-56: rgba(34, 34, 34, 0.561);
-  --black-alpha-64: rgba(34, 34, 34, 0.639);
-  --black-alpha-72: rgba(34, 34, 34, 0.722);
-  --black-alpha-88: rgba(34, 34, 34, 0.878);
+  --black-alpha-32: rgba(28, 28, 30, 0.322);
+  --black-alpha-40: rgba(28, 28, 30, 0.400);
+  --black-alpha-48: rgba(28, 28, 30, 0.478);
+  --black-alpha-56: rgba(28, 28, 30, 0.561);
+  --black-alpha-64: rgba(28, 28, 30, 0.639);
+  --black-alpha-72: rgba(28, 28, 30, 0.722);
+  --black-alpha-88: rgba(28, 28, 30, 0.878);
 
   --white-alpha-56: rgba(255, 255, 255, 0.561);
   --white-alpha-72: rgba(255, 255, 255, 0.722);
 
-  --border-faint: #cccccc;
-  --border-muted: #dddddd;
-  --border-loud: #cccccc;
+  --border-faint: #e0e0e0;
+  --border-muted: #d3d5da;
+  --border-loud: #e0e0e0;
 
-  --illustrations-faint: #eeeeee;
-  --illustrations-muted: #dddddd;
-  --illustrations-default: #cccccc;
+  --illustrations-faint: #f7f7f8;
+  --illustrations-muted: #ecedf0;
+  --illustrations-default: #d3d5da;
 
   --background-lighter: #ffffff;
-  --background-base: #ffffff;
-  --panel-bg: #eeeeee;
-  --panel-bg-soft: #fdfdfd;
-  --menubar-bg: #eeeeee;
-  --tabs-bg: #dddddd;
+  --background-base: #ecedf0;
+  --panel-bg: #f7f7f8;
+  --panel-bg-soft: #ffffff;
+  --menubar-bg: rgba(255, 255, 255, 0.72);
+  --tabs-bg: #f1f2f4;
 
-  --foreground: #222222;
-  --foreground-dimmer: rgba(34, 34, 34, 0.72);
+  --foreground: #1c1c1e;
+  --foreground-dimmer: rgba(28, 28, 30, 0.72);
 
-  --mxr-blue: #4B5CF0;
-  --mxr-blue-soft: #f5f7ff;
-  --mxr-blue-active: #e6eaff;
-  --mxr-link: #0088ff;
-  --mxr-gray-text: #666666;
-  --mxr-gray-muted: #888888;
+  --mxr-blue: #4a4ff5;
+  --mxr-blue-soft: #f0f1ff;
+  --mxr-blue-active: #e4e6ff;
+  --mxr-link: #2196f3;
+  --mxr-gray-text: #6a6a72;
+  --mxr-gray-muted: #8a8b90;
   --mxr-gray-faint: #aaaaaa;
 }

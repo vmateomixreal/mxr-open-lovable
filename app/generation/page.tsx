@@ -73,7 +73,7 @@ function AISandboxPage() {
   const [promptInput, setPromptInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
-      content: 'Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I\'ll automatically create a sandbox for you if needed!\n\nTip: If you see package errors like "react-router-dom not found", just type "npm install" or "check packages" to automatically install missing packages.',
+      content: '¡Hola! Puedo generar e iterar código con el contexto completo de tu sandbox.\n\nEmpieza a chatear: si hace falta, creo el entorno automáticamente.\n\nConsejo: si faltan paquetes (p. ej. react-router-dom), escribe «npm install» o «check packages».',
       type: 'system',
       timestamp: new Date()
     }
@@ -501,7 +501,7 @@ function AISandboxPage() {
         }
       }
     } catch (error: any) {
-      addChatMessage(`Failed to install packages: ${error.message}`, 'system');
+      addChatMessage(`No se pudieron instalar los paquetes: ${error.message}`, 'system');
     }
   };
 
@@ -607,7 +607,7 @@ function AISandboxPage() {
         if (!fromHomeScreen) {
           addChatMessage(`Sandbox created! ID: ${data.sandboxId}. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them!
 
-Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)`, 'system');
+Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (react-router-dom, axios, etc.).`, 'system');
         }
         
         setTimeout(() => {
@@ -807,7 +807,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   break;
                   
                 case 'error':
-                  addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
+                  addChatMessage(`Error: ${data.message || data.error || 'Error desconocido'}`, 'system');
                   // Reset loading state on error
                   setLoading(false);
                   break;
@@ -994,7 +994,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         schedulePreviewRefresh(effectiveSandboxData?.url, packagesInstalled);
         
         } else {
-          throw new Error(finalData?.error || 'Failed to apply code');
+          throw new Error(finalData?.error || 'No se pudo aplicar el código');
         }
       } else {
         // If no final data was received, still close loading
@@ -1597,7 +1597,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   {/* Files being generated */}
                   {codeApplicationState.stage === 'applying' && codeApplicationState.filesGenerated && (
                     <div className="text-sm text-gray-600">
-                      Creating {codeApplicationState.filesGenerated.length} files...
+                      Creando {codeApplicationState.filesGenerated.length} archivos...
                     </div>
                   )}
                   
@@ -1668,7 +1668,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     if (!message) return;
     
     if (!aiEnabled) {
-      addChatMessage('AI is disabled. Please enable it first.', 'system');
+      addChatMessage('La IA está desactivada. Actívala primero.', 'system');
       return;
     }
     
@@ -1703,7 +1703,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       sandboxCreating = true;
       addChatMessage('Creando el sandbox mientras planifico tu app...', 'system');
       sandboxPromise = createSandbox(true).catch((error: any) => {
-        addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
+        addChatMessage(`No se pudo crear el sandbox: ${error.message}`, 'system');
         throw error;
       });
     }
@@ -1716,7 +1716,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setGenerationProgress(prev => ({
         ...prev,  // Preserve all existing state
         isGenerating: true,
-        status: 'Starting AI generation...',
+        status: 'Iniciando generación con IA...',
         components: [],
         currentComponent: 0,
         streamedCode: '',
@@ -2122,7 +2122,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     setLoading(true);
     log('Creating zip file...');
-    addChatMessage('Creating ZIP file of your Vite app...', 'system');
+    addChatMessage('Creando el ZIP de tu app Vite...', 'system');
     
     try {
       const response = await fetch('/api/create-zip', {
@@ -2156,7 +2156,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       }
     } catch (error: any) {
       log(`Failed to create zip: ${error.message}`, 'error');
-      addChatMessage(`Failed to create ZIP: ${error.message}`, 'system');
+      addChatMessage(`No se pudo crear el ZIP: ${error.message}`, 'system');
     } finally {
       setLoading(false);
     }
@@ -2533,7 +2533,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 //           setActiveTab('preview');
 //         }, 1000); // Show completion briefly then switch
 //       } else {
-//         throw new Error('Failed to generate recreation');
+//         throw new Error('No se pudo generar la recreación');
 //       }
 //       
 //     } catch (error: any) {
@@ -2703,7 +2703,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           });
 
           if (!extractResponse.ok) {
-            throw new Error('Failed to extract brand styles');
+            throw new Error('No se pudieron extraer los estilos de marca');
           }
 
           brandGuidelines = await extractResponse.json();
@@ -2746,7 +2746,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           });
           
           if (!scrapeResponse.ok) {
-            throw new Error('Failed to scrape website');
+            throw new Error('No se pudo analizar el sitio web');
           }
           
           scrapeData = await scrapeResponse.json() as ScrapeData;
@@ -3044,7 +3044,7 @@ Focus on the key sections and content, making it clean and modern.`;
         });
         
         if (!aiResponse.ok || !aiResponse.body) {
-          throw new Error('Failed to generate code');
+          throw new Error('No se pudo generar el código');
         }
         
         const reader = aiResponse.body.getReader();
@@ -3262,7 +3262,7 @@ Focus on the key sections and content, making it clean and modern.`;
             }]
           }));
         } else {
-          throw new Error('Failed to generate recreation');
+          throw new Error('No se pudo generar la recreación');
         }
         
         setUrlInput('');
@@ -3292,7 +3292,7 @@ Focus on the key sections and content, making it clean and modern.`;
           setActiveTab('preview');
         }, 1000); // Show completion briefly then switch
       } catch (error: any) {
-        addChatMessage(`Failed to generate: ${error.message}`, 'system');
+        addChatMessage(`No se pudo generar: ${error.message}`, 'system');
         setUrlStatus([]);
         setIsPreparingDesign(false);
         setIsStartingNewGeneration(false); // Clear new generation flag on error
@@ -3312,12 +3312,12 @@ Focus on the key sections and content, making it clean and modern.`;
 
   return (
     <HeaderProvider>
-      <div className="text-foreground h-screen flex flex-col relative" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <div className="mx-workspace text-foreground h-screen flex flex-col relative">
       <div className="meshBg" aria-hidden>
         <div className="meshTint" />
       </div>
-      <div className="relative z-[1] h-32 px-12 flex items-center justify-between bg-white/50 backdrop-blur-sm border-b border-[#ccc]">
-        <Link href="/" className="text-[13px] text-[#666] hover:text-[#222]">
+      <div className="mx-workspace__top relative z-[1]">
+        <Link href="/" className="mx-texto--pie hover:text-[var(--mx-acento)] transition-colors">
           Inicio
         </Link>
         <div className="flex items-center gap-2">
@@ -3369,8 +3369,8 @@ Focus on the key sections and content, making it clean and modern.`;
       </div>
 
       <div className="flex-1 flex overflow-hidden relative z-[1]">
-        {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className="flex-1 max-w-[400px] flex flex-col border-r border-[#ccc] bg-white/90 backdrop-blur-sm">
+        {/* Panel chat — más amplio en generación */}
+        <div className="mx-workspace__chat">
           {/* Sidebar Input Component */}
           {!hasInitialSubmission ? (
             <div className="p-4 border-b border-border">
@@ -3497,13 +3497,13 @@ Focus on the key sections and content, making it clean and modern.`;
                 <div key={idx} className="block">
                   <div className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-14 py-8 ${
-                        msg.type === 'user' ? 'bg-[#4B5CF0] text-white ml-auto max-w-[80%]' :
-                        msg.type === 'ai' ? 'bg-gray-100 text-gray-900 mr-auto max-w-[80%]' :
-                        msg.type === 'system' ? 'bg-[#4B5CF0] text-white text-sm' :
-                        msg.type === 'command' ? 'bg-[#4B5CF0] text-white font-mono text-sm' :
-                        msg.type === 'error' ? 'bg-red-900 text-red-100 text-sm border border-red-700' :
-                        'bg-[#4B5CF0] text-white text-sm'
+                      <div className={`${
+                        msg.type === 'user' ? 'mx-chat-bubble mx-chat-bubble--user' :
+                        msg.type === 'ai' ? 'mx-chat-bubble mx-chat-bubble--ai' :
+                        msg.type === 'system' ? 'mx-chat-bubble mx-chat-bubble--system' :
+                        msg.type === 'command' ? 'mx-chat-bubble bg-[var(--mx-oscuro)] text-white font-mono text-sm' :
+                        msg.type === 'error' ? 'mx-chat-bubble bg-red-900 text-red-100 text-sm border border-red-700' :
+                        'mx-chat-bubble mx-chat-bubble--system'
                       }`}>
                     {msg.type === 'command' ? (
                       <div className="flex items-start gap-2">
@@ -3910,7 +3910,7 @@ Focus on the key sections and content, making it clean and modern.`;
               value={aiChatInput}
               onChange={setAiChatInput}
               onSubmit={sendChatMessage}
-              placeholder="Describe lo que quieres crear..."
+              placeholder="Describe el cambio o lo que quieres crear..."
               showSearchFeatures={false}
               allowImages
               images={chatImages}
@@ -3919,8 +3919,7 @@ Focus on the key sections and content, making it clean and modern.`;
           </div>
         </div>
 
-        {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-white/70 backdrop-blur-sm">
+        <div className="mx-workspace__preview">
           <div className="px-12 pt-8 pb-8 mxr-menubar flex justify-between items-center">
             <div className="flex items-center gap-8">
               {/* Toggle-style Code/View switcher */}
