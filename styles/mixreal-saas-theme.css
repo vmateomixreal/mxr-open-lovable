@@ -1,0 +1,193 @@
+/**
+ * MixReal SaaS visual layer — only when html.theme-saas is present.
+ */
+
+html.theme-saas,
+html.theme-saas body.mx {
+  margin: 0;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Canvas SaaS: gris muy suave; el blanco queda para cards/cajón */
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+html.theme-saas .meshBg {
+  background-color: var(--bg-secondary);
+}
+
+html.theme-saas .meshTint {
+  background-image:
+    radial-gradient(at 18% 12%, rgba(59, 130, 246, 0.1) 0px, transparent 42%),
+    radial-gradient(at 82% 18%, rgba(37, 99, 235, 0.06) 0px, transparent 40%),
+    radial-gradient(at 50% 88%, rgba(219, 234, 254, 0.45) 0px, transparent 48%);
+}
+
+/* Keep title position; push composer down for more breathing room */
+html.theme-saas .mx-home-hero {
+  padding-top: clamp(40px, 6vw, 72px);
+  padding-bottom: clamp(8px, 1.5vw, 16px);
+}
+
+html.theme-saas .mx-home-composer-slot {
+  margin-top: clamp(36px, 5vw, 64px);
+}
+
+/* Primary actions */
+html.theme-saas .button-primary,
+html.theme-saas .mxr-btn-primary,
+html.theme-saas .mxr-btn.selected,
+html.theme-saas .home-composer__send.is-ready,
+html.theme-saas .btn-primary {
+  background: var(--accent-primary) !important;
+  color: #fff !important;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.28);
+}
+
+html.theme-saas .button-primary:hover,
+html.theme-saas .mxr-btn-primary:hover,
+html.theme-saas .home-composer__send.is-ready:hover,
+html.theme-saas .btn-primary:hover {
+  background: var(--accent-hover) !important;
+}
+
+html.theme-saas .mx-btn--oscuro {
+  background: var(--accent-primary);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+}
+
+html.theme-saas .mx-btn--oscuro:hover {
+  background: var(--accent-hover);
+}
+
+html.theme-saas .mx-etiqueta {
+  color: var(--accent-primary);
+}
+
+html.theme-saas a:hover {
+  color: var(--accent-primary);
+}
+
+html.theme-saas .mxr-tab.selected {
+  background: var(--accent-primary);
+}
+
+html.theme-saas .home-composer__mode,
+html.theme-saas .home-composer__mode-menu button.is-active,
+html.theme-saas .home-composer__mode-menu button:hover {
+  color: var(--accent-primary);
+}
+
+html.theme-saas .home-composer {
+  border-radius: var(--radius);
+  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+html.theme-saas .home-composer__model-trigger,
+html.theme-saas .mxr-select,
+html.theme-saas .home-composer__ghost-btn,
+html.theme-saas .home-composer__chip {
+  border-radius: 999px;
+  background: #f4f6fb;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+html.theme-saas input:not([type='file']):not([type='checkbox']):not([type='radio']),
+html.theme-saas textarea,
+html.theme-saas select {
+  border-radius: var(--radius-control);
+}
+
+html.theme-saas .mxr-card,
+html.theme-saas .model-item {
+  border-radius: var(--radius);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+html.theme-saas .mx-chat-bubble--user {
+  background: var(--accent-primary);
+}
+
+html.theme-saas .mx-workspace__top {
+  border-bottom: 1px solid var(--border-primary);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+html.theme-saas.dark .mx-workspace__top,
+html.theme-saas.dark .home-composer {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
+}
+
+html.theme-saas.dark .meshBg {
+  background-color: #000;
+}
+
+html.theme-saas.dark .meshTint {
+  background-image:
+    radial-gradient(at 20% 15%, rgba(96, 165, 250, 0.18) 0px, transparent 42%),
+    radial-gradient(at 80% 30%, rgba(37, 99, 235, 0.12) 0px, transparent 40%);
+}
+
+/* Reusable SaaS patterns */
+html.theme-saas .saas-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+html.theme-saas .saas-btn-primary,
+html.theme-saas .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--accent-primary);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+html.theme-saas .saas-btn-primary:hover,
+html.theme-saas .btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+html.theme-saas .saas-input,
+html.theme-saas .input-soft {
+  width: 100%;
+  min-height: var(--control-h);
+  height: var(--control-h);
+  padding: 0 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-control);
+  background: #f4f6fb;
+  color: var(--text-primary);
+  outline: none;
+}
+
+html.theme-saas .saas-input:focus,
+html.theme-saas .input-soft:focus {
+  border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+
+html.theme-saas .saas-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+html.theme-saas .saas-link:hover {
+  color: var(--accent-hover);
+}

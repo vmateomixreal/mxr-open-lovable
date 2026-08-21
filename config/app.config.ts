@@ -14,7 +14,15 @@ function isModelSelectorEnabled(): boolean {
   return !['0', 'false', 'no', 'off'].includes(String(raw).trim().toLowerCase());
 }
 
+/** true = MixReal SaaS look (#3b82f6). false = current Mixreal estilos design. */
+function isMixrealSaasThemeEnabled(): boolean {
+  const raw = process.env.NEXT_PUBLIC_USE_MIXREAL_SAAS_THEME;
+  if (raw == null || raw === '') return false;
+  return ['1', 'true', 'yes', 'on'].includes(String(raw).trim().toLowerCase());
+}
+
 const showModelSelector = isModelSelectorEnabled();
+const useMixrealSaasTheme = isMixrealSaasThemeEnabled();
 
 export const appConfig = {
   // Vercel Sandbox Configuration
@@ -156,6 +164,8 @@ export const appConfig = {
   ui: {
     // Driven by NEXT_PUBLIC_ENABLE_MODEL_SELECTOR (default: true)
     showModelSelector,
+    // Driven by NEXT_PUBLIC_USE_MIXREAL_SAAS_THEME (default: false = diseño actual)
+    useMixrealSaasTheme,
     showStatusIndicator: true,
     
     // Animation durations (milliseconds)

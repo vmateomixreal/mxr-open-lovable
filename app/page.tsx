@@ -248,7 +248,7 @@ export default function HomePage() {
           </div>
         </section>
 
-          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(80px,12vw,160px)] -mt-2">
+          <div className="mx-home-composer-slot relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(80px,12vw,160px)]">
             <HomeComposer
               value={url}
               onChange={(value) => {

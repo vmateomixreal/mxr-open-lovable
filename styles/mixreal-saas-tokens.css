@@ -1,0 +1,108 @@
+/**
+ * MixReal SaaS design tokens.
+ * Active when <html> has class `theme-saas`
+ * (NEXT_PUBLIC_USE_MIXREAL_SAAS_THEME=true).
+ */
+
+html.theme-saas {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  --bg-hover: #e9ecef;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-muted: #d1d5db;
+  --border-primary: #e5e7eb;
+  --border-secondary: #d1d5db;
+  --accent-primary: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-light: #dbeafe;
+  --radius: 0.75rem;
+  --radius-control: 0.95rem;
+  --control-h: 3.15rem;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #06b6d4;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Aliases used by the SaaS theme layer */
+  --saas-bg: var(--bg-primary);
+  --saas-bg-muted: var(--bg-secondary);
+  --saas-bg-input: #f4f6fb;
+  --saas-text: var(--text-primary);
+  --saas-text-muted: var(--text-secondary);
+  --saas-border: var(--border-primary);
+  --saas-border-soft: rgba(15, 23, 42, 0.08);
+  --saas-accent: var(--accent-primary);
+  --saas-accent-hover: var(--accent-hover);
+  --saas-accent-light: var(--accent-light);
+  --saas-radius: var(--radius);
+  --saas-radius-input: var(--radius-control);
+  --saas-control-h: var(--control-h);
+
+  /* Bridge into Mixreal / heat tokens */
+  --mx-fondo: var(--bg-secondary);
+  --mx-fondo-alt: var(--bg-primary);
+  --mx-tarjeta: #ffffff;
+  --mx-tarjeta-alt: #f4f6fb;
+  --mx-oscuro: #111827;
+  --mx-oscuro-alto: #1f2937;
+  --mx-oscuro-bajo: #0b1220;
+  --mx-tinta: var(--text-primary);
+  --mx-tinta-fuerte: #111827;
+  --mx-tinta-media: #1f2937;
+  --mx-suave: var(--text-secondary);
+  --mx-tenue: var(--text-tertiary);
+  --mx-sobre-oscuro: #ffffff;
+  --mx-suave-oscuro: rgba(255, 255, 255, 0.7);
+  --mx-acento: var(--accent-hover);
+  --mx-menu: var(--accent-primary);
+  --mx-violeta: #6366f1;
+  --mx-azul: var(--accent-primary);
+  --mx-linea: var(--border-primary);
+  --mx-linea-suave: #eef2f7;
+  --mx-radio: var(--radius);
+  --mx-radio-medio: 0.85rem;
+  --mx-radio-chico: 0.65rem;
+  --mx-radio-icono: 0.75rem;
+  --mx-sombra: 0 1px 3px var(--shadow-color);
+  --mx-sombra-media: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --mx-sombra-alta: 0 10px 24px rgba(37, 99, 235, 0.18);
+  --mx-sombra-icono: 0 6px 16px rgba(15, 23, 42, 0.12);
+
+  --heat-100: var(--accent-primary);
+  --heat-200: var(--accent-hover);
+  --mxr-blue: var(--accent-primary);
+  --mxr-blue-soft: var(--accent-light);
+  --mxr-blue-active: #bfdbfe;
+  --accent-bluetron: var(--accent-primary);
+  --accent-black: var(--text-primary);
+  --background-base: var(--bg-secondary);
+  --background-lighter: var(--bg-primary);
+  --panel-bg: var(--bg-secondary);
+  --panel-bg-soft: var(--bg-primary);
+  --border-faint: var(--border-primary);
+  --border-muted: var(--border-secondary);
+  --foreground: var(--text-primary);
+  --mxr-gray-text: var(--text-secondary);
+  --mxr-gray-muted: var(--text-tertiary);
+}
+
+html.theme-saas.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-tertiary: #374151;
+  --bg-hover: #1f2937;
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+  --border-primary: #374151;
+  --border-secondary: #4b5563;
+  --accent-primary: #60a5fa;
+  --accent-hover: #3b82f6;
+  --accent-light: rgba(96, 165, 250, 0.16);
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}

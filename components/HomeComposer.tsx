@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import ModelSelect from '@/components/ModelSelect';
 import { ModelSelectorGate } from '@/components/ModelSelectorGate';
@@ -68,11 +69,23 @@ export default function HomeComposer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [modeOpen, setModeOpen] = useState(false);
   const [listening, setListening] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const modeRef = useRef<HTMLDivElement>(null);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const canSubmit = value.trim().length > 0 || (!scrapperEnabled && promptImages.length > 0);
   const modeLabel = scrapperEnabled ? 'Reference' : 'Chat';
+
+  const updateModeMenuPosition = () => {
+    const el = modeRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + 8,
+      right: Math.max(12, window.innerWidth - rect.right),
+    });
+  };
 
   const resizeTextarea = () => {
     const el = textareaRef.current;
@@ -88,13 +101,26 @@ export default function HomeComposer({
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
-      if (modeRef.current && !modeRef.current.contains(event.target as Node)) {
-        setModeOpen(false);
-      }
+      const target = event.target as Node;
+      const inTrigger = modeRef.current?.contains(target);
+      const inMenu = modeMenuRef.current?.contains(target);
+      if (!inTrigger && !inMenu) setModeOpen(false);
     };
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, []);
+
+  useEffect(() => {
+    if (!modeOpen) return;
+    updateModeMenuPosition();
+    const onReposition = () => updateModeMenuPosition();
+    window.addEventListener('resize', onReposition);
+    window.addEventListener('scroll', onReposition, true);
+    return () => {
+      window.removeEventListener('resize', onReposition);
+      window.removeEventListener('scroll', onReposition, true);
+    };
+  }, [modeOpen]);
 
   useEffect(() => {
     return () => {
@@ -279,10 +305,24 @@ export default function HomeComposer({
               type="button"
               className="home-composer__mode"
               aria-expanded={modeOpen}
-              onClick={() => setModeOpen((open) => !open)}
+              onClick={() => {
+                if (modeOpen) {
+                  setModeOpen(false);
+                  return;
+                }
+                updateModeMenuPosition();
+                setModeOpen(true);
+              }}
             >
               <span>{modeLabel}</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden
+                className={modeOpen ? 'home-composer__mode-chevron is-open' : 'home-composer__mode-chevron'}
+              >
                 <path
                   d="M3 4.5L6 7.5L9 4.5"
                   stroke="currentColor"
@@ -292,32 +332,42 @@ export default function HomeComposer({
                 />
               </svg>
             </button>
-            {modeOpen && (
-              <div className="home-composer__mode-menu">
-                <button
-                  type="button"
-                  className={!scrapperEnabled ? 'is-active' : ''}
-                  onClick={() => {
-                    if (scrapperEnabled) onToggleMode();
-                    setModeOpen(false);
-                  }}
+            {modeOpen &&
+              menuPos &&
+              createPortal(
+                <div
+                  ref={modeMenuRef}
+                  className="home-composer__mode-menu"
+                  style={{ top: menuPos.top, right: menuPos.right }}
+                  role="menu"
                 >
-                  Chat
-                  <span>Modo prompt</span>
-                </button>
-                <button
-                  type="button"
-                  className={scrapperEnabled ? 'is-active' : ''}
-                  onClick={() => {
-                    if (!scrapperEnabled) onToggleMode();
-                    setModeOpen(false);
-                  }}
-                >
-                  Reference
-                  <span>Modo scrapper</span>
-                </button>
-              </div>
-            )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={!scrapperEnabled ? 'is-active' : ''}
+                    onClick={() => {
+                      if (scrapperEnabled) onToggleMode();
+                      setModeOpen(false);
+                    }}
+                  >
+                    Chat
+                    <span>Modo prompt</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={scrapperEnabled ? 'is-active' : ''}
+                    onClick={() => {
+                      if (!scrapperEnabled) onToggleMode();
+                      setModeOpen(false);
+                    }}
+                  >
+                    Reference
+                    <span>Modo scrapper</span>
+                  </button>
+                </div>,
+                document.body,
+              )}
           </div>
 
           <button

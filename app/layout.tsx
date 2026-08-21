@@ -3,6 +3,7 @@ import { Urbanist, Roboto_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import MxScrollReveal from "@/components/MxScrollReveal";
+import { appConfig } from "@/config/app.config";
 
 const urbanist = Urbanist({
   subsets: ["latin"],
@@ -36,16 +37,22 @@ export const metadata: Metadata = {
   },
 };
 
+const useSaasTheme = appConfig.ui.useMixrealSaasTheme;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={useSaasTheme ? "theme-saas" : undefined}>
       <body
         className={`mx ${urbanist.variable} ${geistSans.variable} ${geistMono.variable} ${robotoMono.variable}`}
-        style={{ fontFamily: "var(--font-urbanist), Urbanist, system-ui, sans-serif" }}
+        style={{
+          fontFamily: useSaasTheme
+            ? "var(--font-geist-sans), system-ui, sans-serif"
+            : "var(--font-urbanist), Urbanist, system-ui, sans-serif",
+        }}
       >
         <MxScrollReveal />
         {children}

@@ -548,6 +548,7 @@ Para conservar trabajo: usar **export zip** (`/api/create-zip`) antes de que exp
 | **OpenRouter** | Todos los LLMs | `OPEN_ROUTER_API_KEY` (obligatoria). Opcional: `OPEN_ROUTER_HTTP_REFERER`, `OPEN_ROUTER_APP_TITLE` |
 | **Selector de modelos** | Mostrar/ocultar UI de modelo | `NEXT_PUBLIC_ENABLE_MODEL_SELECTOR` (`true`/`false`). Si es `false`, siempre `anthropic/claude-sonnet-5` |
 | **Modelo por defecto** | Solo si el selector está activo | `NEXT_PUBLIC_DEFAULT_MODEL` (opcional) |
+| **Tema visual** | Diseño actual vs MixReal SaaS | `NEXT_PUBLIC_USE_MIXREAL_SAAS_THEME` (`false` = Mixreal estilos actual; `true` = SaaS blanco/#3b82f6) |
 | **Firecrawl** | Scrapper | `FIRECRAWL_API_KEY` |
 | **Morph** | Fast apply en ediciones | `MORPH_API_KEY` |
 | **E2B** | Sandbox | `SANDBOX_PROVIDER=e2b`, `E2B_API_KEY` |

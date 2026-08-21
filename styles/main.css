@@ -4,6 +4,8 @@
 @import "./components/index.css";
 @import "./inside-border-fix.css";
 @import "./mixreal-theme.css";
+@import "./mixreal-saas-tokens.css";
+@import "./mixreal-saas-theme.css";
 
 /* Additional styles */
 @import "additional-styles/utility-patterns.css";

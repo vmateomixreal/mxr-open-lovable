@@ -322,7 +322,12 @@ button {
 .mx-home-hero {
   position: relative;
   z-index: 1;
-  padding: clamp(40px, 6vw, 72px) clamp(24px, 7vw, 140px) clamp(20px, 3vw, 32px);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 7vw, 140px) clamp(12px, 2vw, 20px);
+}
+
+/* Espacio bajo el título sin subir el hero */
+.mx-home-composer-slot {
+  margin-top: clamp(28px, 4vw, 48px);
 }
 
 .mx-home-input {
@@ -510,20 +515,27 @@ button {
   color: color-mix(in srgb, var(--mx-menu) 80%, #000);
 }
 
+.home-composer__mode-chevron {
+  transition: transform 0.18s ease;
+}
+
+.home-composer__mode-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* Fixed + portal: opens below Chat without being clipped by the composer */
 .home-composer__mode-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 10px);
-  min-width: 180px;
+  position: fixed;
+  z-index: 80;
+  min-width: 200px;
   padding: 8px;
   border-radius: var(--mx-radio-medio);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(28, 28, 30, 0.08);
   box-shadow: 0 18px 44px rgba(28, 28, 30, 0.16);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 40;
 }
 
 .home-composer__mode-menu button {
