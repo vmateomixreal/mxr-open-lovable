@@ -29,6 +29,8 @@ import {
 } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+import GenerationFileList from '@/components/app/generation/GenerationFileList';
+import { toSpanishGenerationStatus } from '@/lib/i18n/generation-status.es';
 
 interface SandboxData {
   sandboxId: string;
@@ -151,6 +153,8 @@ function AISandboxPage() {
   const sandboxDataRef = useRef<SandboxData | null>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
+  /** Src con cache-bust para forzar recarga del iframe (Vite tiene HMR desactivado). */
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   
   const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({
     stage: null
@@ -339,6 +343,15 @@ function AISandboxPage() {
 
   useEffect(() => {
     sandboxDataRef.current = sandboxData;
+    if (sandboxData?.url) {
+      setPreviewSrc(prev => {
+        // Mantener cache-bust si ya apunta a la misma base
+        if (prev && prev.startsWith(sandboxData.url)) return prev;
+        return sandboxData.url;
+      });
+    } else {
+      setPreviewSrc(null);
+    }
   }, [sandboxData]);
   
   // Start capturing screenshot if URL is provided on mount (from home screen)
@@ -407,15 +420,19 @@ function AISandboxPage() {
   };
 
   const addChatMessage = (content: string, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
+    const localized =
+      type === 'system' || type === 'ai'
+        ? toSpanishGenerationStatus(content)
+        : content;
     setChatMessages(prev => {
       // Skip duplicate consecutive system messages
       if (type === 'system' && prev.length > 0) {
         const lastMessage = prev[prev.length - 1];
-        if (lastMessage.type === 'system' && lastMessage.content === content) {
+        if (lastMessage.type === 'system' && lastMessage.content === localized) {
           return prev; // Skip duplicate
         }
       }
-      return [...prev, { content, type, timestamp: new Date(), metadata }];
+      return [...prev, { content: localized, type, timestamp: new Date(), metadata }];
     });
   };
   
@@ -609,7 +626,7 @@ function AISandboxPage() {
         
         // Only add welcome message if not coming from home screen
         if (!fromHomeScreen) {
-          addChatMessage(`Sandbox created! ID: ${data.sandboxId}. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them!
+          addChatMessage(`¡Sandbox creado! ID: ${data.sandboxId}. Ya tengo el contexto de tu sandbox y puedo ayudarte a construir la app. Pídeme componentes y los aplicaré automáticamente.
 
 Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (react-router-dom, axios, etc.).`, 'system');
         }
@@ -654,23 +671,22 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
     }
 
     setActiveTab('preview');
+    // Tras instalar paquetes + reinicio de Vite necesitamos más margen
     const delay = packagesInstalled
-      ? appConfig.codeApplication.packageInstallRefreshDelay
-      : appConfig.codeApplication.defaultRefreshDelay;
+      ? Math.max(appConfig.codeApplication.packageInstallRefreshDelay, 6000)
+      : Math.max(appConfig.codeApplication.defaultRefreshDelay, 2500);
 
-    const attemptRefresh = (attemptsLeft: number) => {
+    const bust = () => {
+      const next = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}&applied=1`;
+      setPreviewSrc(next);
       if (iframeRef.current) {
-        iframeRef.current.src = `${url}?t=${Date.now()}&applied=true`;
-        return;
+        iframeRef.current.src = next;
       }
-      if (attemptsLeft > 0) {
-        setTimeout(() => attemptRefresh(attemptsLeft - 1), 150);
-        return;
-      }
-      console.warn('[applyGeneratedCode] Preview iframe not mounted yet; sandbox URL is ready');
     };
 
-    setTimeout(() => attemptRefresh(20), delay);
+    // Primera recarga tras el delay; segunda por si Vite aún arrancaba
+    setTimeout(bust, delay);
+    setTimeout(bust, delay + 2500);
   };
 
   const applyGeneratedCode = async (code: string, isEdit: boolean = false, overrideSandboxData?: SandboxData) => {
@@ -739,10 +755,14 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                       stage: 'installing', 
                       packages: data.packages 
                     });
-                  } else if (data.message.includes('Creating files') || data.message.includes('Applying')) {
+                  } else if (
+                    data.message.includes('Creating files') ||
+                    data.message.includes('Creating ') ||
+                    data.message.includes('Applying')
+                  ) {
                     setCodeApplicationState({ 
                       stage: 'applying',
-                      filesGenerated: [] // Files will be populated when complete
+                      filesGenerated: []
                     });
                   }
                   break;
@@ -793,9 +813,9 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                   
                 case 'command-complete':
                   if (data.success) {
-                    addChatMessage(`Command completed successfully`, 'system');
+                    addChatMessage(`Comando completado correctamente`, 'system');
                   } else {
-                    addChatMessage(`Command failed with exit code ${data.exitCode}`, 'system');
+                    addChatMessage(`El comando falló con código de salida ${data.exitCode}`, 'system');
                   }
                   break;
                   
@@ -929,7 +949,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
           if (data.missingImports && data.missingImports.length > 0) {
             const missingList = data.missingImports.join(', ');
             addChatMessage(
-              `Ask me to "create the missing components: ${missingList}" to fix these import errors.`,
+              `Pídeme «crear los componentes que faltan: ${missingList}» para corregir estos errores de import.`,
               'system'
             );
           }
@@ -957,20 +977,22 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
           // Update the chat message to show success
           // Only show file list if not in edit mode
           if (isEdit) {
-            addChatMessage(`Edit applied successfully!`, 'system');
+            addChatMessage(`¡Edición aplicada correctamente!`, 'system');
           } else {
             // Check if this is part of a generation flow (has recent AI recreation message)
             const recentMessages = chatMessages.slice(-5);
             const isPartOfGeneration = recentMessages.some(m => 
               m.content.includes('AI recreation generated') || 
-              m.content.includes('Code generated')
+              m.content.includes('Code generated') ||
+              m.content.includes('Recreación de la IA') ||
+              m.content.includes('Código generado')
             );
             
             // Don't show files if part of generation flow to avoid duplication
             if (isPartOfGeneration) {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system');
+              addChatMessage(`¡${results.filesCreated.length} archivo${results.filesCreated.length === 1 ? '' : 's'} aplicado${results.filesCreated.length === 1 ? '' : 's'} correctamente!`, 'system');
             } else {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system', {
+              addChatMessage(`¡${results.filesCreated.length} archivo${results.filesCreated.length === 1 ? '' : 's'} aplicado${results.filesCreated.length === 1 ? '' : 's'} correctamente!`, 'system', {
                 appliedFiles: results.filesCreated
               });
             }
@@ -978,7 +1000,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
           
           // If there are failed packages, add a message about checking for errors
           if (results.packagesFailed?.length > 0) {
-            addChatMessage(`⚠️ Some packages failed to install. Check the error banner above for details.`, 'system');
+            addChatMessage(`⚠️ Algunos paquetes no se pudieron instalar. Revisa el aviso de error de arriba.`, 'system');
           }
           
           // Fetch updated file structure
@@ -994,8 +1016,8 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
           console.log('[build-test] Skipping build test - would need API endpoint');
         }
 
-        const packagesInstalled = results?.packagesInstalled?.length > 0 || data.results?.packagesInstalled?.length > 0;
-        schedulePreviewRefresh(effectiveSandboxData?.url, packagesInstalled);
+        // Siempre esperamos un poco más: tras aplicar se reinicia Vite (HMR off)
+        schedulePreviewRefresh(effectiveSandboxData?.url, true);
         
         } else {
           throw new Error(finalData?.error || 'No se pudo aplicar el código');
@@ -1006,6 +1028,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
       }
     } catch (error: any) {
       log(`Failed to apply code: ${error.message}`, 'error');
+      setCodeApplicationState({ stage: null });
     } finally {
       setLoading(false);
       // Clear isEdit flag after applying code
@@ -1013,6 +1036,10 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
         ...prev,
         isEdit: false
       }));
+      // Asegurar que el overlay blanco no se quede pegado
+      setTimeout(() => {
+        setCodeApplicationState({ stage: null });
+      }, 3500);
     }
   };
 
@@ -1092,115 +1119,137 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
 //   };
 
   const renderMainContent = () => {
-    if (activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length > 0)) {
+    if (activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length > 0 || selectedFile)) {
+      const activeCodePath =
+        selectedFile ||
+        generationProgress.currentFile?.path ||
+        generationProgress.files[0]?.path ||
+        null;
+      const isLiveFile =
+        Boolean(generationProgress.currentFile) &&
+        generationProgress.currentFile?.path === activeCodePath;
+      const activeContent = activeCodePath
+        ? isLiveFile && generationProgress.currentFile
+          ? generationProgress.currentFile.content
+          : resolveFileContent(activeCodePath)
+        : '';
+      const activeExt = activeCodePath?.split('.').pop()?.toLowerCase();
+      const activeLanguage =
+        activeExt === 'css' || activeExt === 'scss' ? 'css' :
+        activeExt === 'json' ? 'json' :
+        activeExt === 'html' ? 'html' :
+        activeExt === 'ts' || activeExt === 'tsx' ? 'tsx' :
+        'jsx';
+
       return (
-        /* Generation Tab Content */
-        <div className="absolute inset-0 flex overflow-hidden">
-          {/* File Explorer - Hide during edits */}
+        <div className="mx-code-ide absolute inset-0 flex overflow-hidden">
+          {/* Explorador */}
           {!generationProgress.isEdit && (
-            <div className="w-[250px] border-r border-gray-200 bg-white flex flex-col flex-shrink-0">
-            <div className="p-4 bg-gray-100 text-gray-900 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BsFolderFill style={{ width: '16px', height: '16px' }} />
-                <span className="text-sm font-medium">Explorador</span>
+            <aside className="mx-code-ide__sidebar">
+              <div className="mx-code-ide__sidebar-head">
+                <BsFolderFill style={{ width: 14, height: 14 }} />
+                <span>Explorador</span>
+                {generationProgress.files.length > 0 && (
+                  <span className="mx-code-ide__count">{generationProgress.files.length}</span>
+                )}
               </div>
-            </div>
-            
-            {/* File Tree */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-              <div className="text-sm">
-                {/* Root app folder */}
-                <div 
-                  className="flex items-center gap-2 py-0.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
+              <div className="mx-code-ide__tree scrollbar-hide">
+                <button
+                  type="button"
+                  className="mx-code-ide__folder"
                   onClick={() => toggleFolder('app')}
                 >
                   {expandedFolders.has('app') ? (
-                    <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-gray-600" />
+                    <FiChevronDown style={{ width: 14, height: 14 }} />
                   ) : (
-                    <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-gray-600" />
+                    <FiChevronRight style={{ width: 14, height: 14 }} />
                   )}
                   {expandedFolders.has('app') ? (
-                    <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-blue-500" />
+                    <BsFolder2Open style={{ width: 14, height: 14 }} className="text-[var(--mx-menu)]" />
                   ) : (
-                    <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-blue-500" />
+                    <BsFolderFill style={{ width: 14, height: 14 }} className="text-[var(--mx-menu)]" />
                   )}
-                  <span className="font-medium text-gray-800">app</span>
-                </div>
-                
+                  <span>app</span>
+                </button>
+
                 {expandedFolders.has('app') && (
-                  <div className="ml-6">
-                    {/* Group files by directory */}
+                  <div className="mx-code-ide__tree-nested">
                     {(() => {
-                      const fileTree: { [key: string]: Array<{ name: string; edited?: boolean }> } = {};
-                      
-                      // Create a map of edited files
-                      // const editedFiles = new Set(
-                      //   generationProgress.files
-                      //     .filter(f => f.edited)
-                      //     .map(f => f.path)
-                      // );
-                      
-                      // Process all files from generation progress
+                      const fileTree: { [key: string]: Array<{ name: string; edited?: boolean; path: string }> } = {};
                       generationProgress.files.forEach(file => {
                         const parts = file.path.split('/');
                         const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
                         const fileName = parts[parts.length - 1];
-                        
                         if (!fileTree[dir]) fileTree[dir] = [];
                         fileTree[dir].push({
                           name: fileName,
-                          edited: file.edited || false
+                          edited: file.edited || false,
+                          path: file.path,
                         });
                       });
-                      
+
+                      // Archivo en curso que aún no está en la lista
+                      if (
+                        generationProgress.currentFile &&
+                        !generationProgress.files.some(f => f.path === generationProgress.currentFile?.path)
+                      ) {
+                        const path = generationProgress.currentFile.path;
+                        const parts = path.split('/');
+                        const dir = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+                        const fileName = parts[parts.length - 1];
+                        if (!fileTree[dir]) fileTree[dir] = [];
+                        if (!fileTree[dir].some(f => f.path === path)) {
+                          fileTree[dir].push({ name: fileName, path });
+                        }
+                      }
+
                       return Object.entries(fileTree).map(([dir, files]) => (
-                        <div key={dir} className="mb-1">
-                          {dir && (
-                            <div 
-                              className="flex items-center gap-2 py-0.5 px-3 hover:bg-gray-100 rounded cursor-pointer text-gray-700"
+                        <div key={dir || 'root'} className="mx-code-ide__dir">
+                          {dir ? (
+                            <button
+                              type="button"
+                              className="mx-code-ide__folder"
                               onClick={() => toggleFolder(dir)}
                             >
                               {expandedFolders.has(dir) ? (
-                                <FiChevronDown style={{ width: '16px', height: '16px' }} className="text-gray-600" />
+                                <FiChevronDown style={{ width: 14, height: 14 }} />
                               ) : (
-                                <FiChevronRight style={{ width: '16px', height: '16px' }} className="text-gray-600" />
+                                <FiChevronRight style={{ width: 14, height: 14 }} />
                               )}
                               {expandedFolders.has(dir) ? (
-                                <BsFolder2Open style={{ width: '16px', height: '16px' }} className="text-yellow-600" />
+                                <BsFolder2Open style={{ width: 14, height: 14 }} className="text-amber-500" />
                               ) : (
-                                <BsFolderFill style={{ width: '16px', height: '16px' }} className="text-yellow-600" />
+                                <BsFolderFill style={{ width: 14, height: 14 }} className="text-amber-500" />
                               )}
-                              <span className="text-gray-700">{dir.split('/').pop()}</span>
-                            </div>
-                          )}
+                              <span>{dir.split('/').pop()}</span>
+                            </button>
+                          ) : null}
                           {(!dir || expandedFolders.has(dir)) && (
-                            <div className={dir ? 'ml-8' : ''}>
-                              {files.sort((a, b) => a.name.localeCompare(b.name)).map(fileInfo => {
-                                const fullPath = dir ? `${dir}/${fileInfo.name}` : fileInfo.name;
-                                const isSelected = selectedFile === fullPath;
-                                
-                                return (
-                                  <div 
-                                    key={fullPath} 
-                                    className={`flex items-center gap-2 py-0.5 px-3 rounded cursor-pointer transition-all ${
-                                      isSelected 
-                                        ? 'bg-blue-500 text-white' 
-                                        : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
-                                    onClick={() => handleFileClick(fullPath)}
-                                  >
-                                    {getFileIcon(fileInfo.name)}
-                                    <span className={`text-xs flex items-center gap-1 ${isSelected ? 'font-medium' : ''}`}>
-                                      {fileInfo.name}
-                                      {fileInfo.edited && (
-                                        <span className={`text-[10px] px-1 rounded ${
-                                          isSelected ? 'bg-blue-400' : 'bg-[var(--mx-menu)] text-white'
-                                        }`}>✓</span>
-                                      )}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                            <div className={dir ? 'mx-code-ide__tree-nested' : undefined}>
+                              {files
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(fileInfo => {
+                                  const isSelected = activeCodePath === fileInfo.path;
+                                  const isWriting =
+                                    generationProgress.currentFile?.path === fileInfo.path &&
+                                    generationProgress.isGenerating;
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={fileInfo.path}
+                                      className={`mx-code-ide__file${isSelected ? ' is-selected' : ''}${isWriting ? ' is-writing' : ''}`}
+                                      onClick={() => handleFileClick(fileInfo.path)}
+                                    >
+                                      {getFileIcon(fileInfo.name)}
+                                      <span className="mx-code-ide__file-name">{fileInfo.name}</span>
+                                      {isWriting ? (
+                                        <span className="mx-code-ide__file-spinner" aria-hidden />
+                                      ) : fileInfo.edited ? (
+                                        <span className="mx-code-ide__file-dot" title="Editado" />
+                                      ) : null}
+                                    </button>
+                                  );
+                                })}
                             </div>
                           )}
                         </div>
@@ -1209,269 +1258,85 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            </aside>
           )}
-          
-          {/* Code Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Thinking Mode Display - Only show during active generation */}
+
+          {/* Editor único */}
+          <div className="mx-code-ide__editor">
             {generationProgress.isGenerating && (generationProgress.isThinking || generationProgress.thinkingText) && (
-              <div className="px-6 pb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="text-purple-600 font-medium flex items-center gap-2">
-                    {generationProgress.isThinking ? (
-                      <>
-                        <div className="w-3 h-3 bg-purple-600 rounded-full animate-pulse" />
-                        AI is thinking...
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-purple-600">✓</span>
-                        Thought for {generationProgress.thinkingDuration || 0} seconds
-                      </>
-                    )}
-                  </div>
+              <div className="mx-code-ide__thinking">
+                <div className="mx-code-ide__thinking-label">
+                  {generationProgress.isThinking ? (
+                    <>
+                      <span className="mx-code-ide__thinking-dot" />
+                      La IA está pensando…
+                    </>
+                  ) : (
+                    <>Pensó {generationProgress.thinkingDuration || 0}s</>
+                  )}
                 </div>
-                {generationProgress.thinkingText && (
-                  <div className="bg-purple-950 border border-purple-700 rounded-lg p-4 max-h-48 overflow-y-auto scrollbar-hide">
-                    <pre className="text-xs font-mono text-purple-300 whitespace-pre-wrap">
-                      {generationProgress.thinkingText}
-                    </pre>
-                  </div>
-                )}
+                {generationProgress.thinkingText ? (
+                  <pre className="mx-code-ide__thinking-text scrollbar-hide">
+                    {generationProgress.thinkingText}
+                  </pre>
+                ) : null}
               </div>
             )}
-            
-            {/* Live Code Display */}
-            <div className="flex-1 rounded-lg p-6 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide" ref={codeDisplayRef}>
-                {/* Show selected file if one is selected */}
-                {selectedFile ? (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="bg-black border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                      <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getFileIcon(selectedFile)}
-                          <span className="font-mono text-sm">{selectedFile}</span>
-                        </div>
-                        <button
-                          onClick={() => setSelectedFile(null)}
-                          className="hover:bg-black/20 p-1 rounded transition-colors"
-                        >
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="bg-gray-900 border border-gray-700 rounded">
-                        <SyntaxHighlighter
-                          language={(() => {
-                            const ext = selectedFile.split('.').pop()?.toLowerCase();
-                            if (ext === 'css') return 'css';
-                            if (ext === 'json') return 'json';
-                            if (ext === 'html') return 'html';
-                            return 'jsx';
-                          })()}
-                          style={vscDarkPlus}
-                          customStyle={{
-                            margin: 0,
-                            padding: '1rem',
-                            fontSize: '0.875rem',
-                            background: 'transparent',
-                          }}
-                          showLineNumbers={true}
-                        >
-                          {(() => {
-                            // Find the file content from generated files
-                            const file = generationProgress.files.find(f => f.path === selectedFile);
-                            return file?.content || '// File content will appear here';
-                          })()}
-                        </SyntaxHighlighter>
-                      </div>
-                    </div>
-                  </div>
-                ) : /* If no files parsed yet, show loading or raw stream */
-                generationProgress.files.length === 0 && !generationProgress.currentFile ? (
-                  generationProgress.isThinking ? (
-                    // Beautiful loading state while thinking
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="mb-8 relative">
-                          <div className="w-48 h-48 mx-auto">
-                            <div className="absolute inset-0 border-8 border-gray-800 rounded-full"></div>
-                            <div className="absolute inset-0 border-8 border-green-500 rounded-full animate-spin border-t-transparent"></div>
-                          </div>
-                        </div>
-                        <h3 className="text-xl font-medium text-white mb-2">La IA está analizando tu petición</h3>
-                        <p className="text-gray-400 text-sm">{generationProgress.status || 'Preparando la generación de código...'}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="px-4 py-2 bg-gray-100 text-gray-900 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-16 border-2 border-[var(--mx-menu)] border-t-transparent rounded-full animate-spin" />
-                          <span className="font-mono text-sm">Recibiendo código...</span>
-                        </div>
-                      </div>
-                      <div className="p-4 bg-gray-900 rounded">
-                        <SyntaxHighlighter
-                          language="jsx"
-                          style={vscDarkPlus}
-                          customStyle={{
-                            margin: 0,
-                            padding: '1rem',
-                            fontSize: '0.875rem',
-                            background: 'transparent',
-                          }}
-                          showLineNumbers={true}
-                        >
-                          {generationProgress.streamedCode || 'Iniciando la generación de código...'}
-                        </SyntaxHighlighter>
-                        <span className="inline-block w-3 h-5 bg-[var(--mx-menu)] ml-1 animate-pulse" />
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="space-y-4">
-                    {/* Show current file being generated */}
-                    {generationProgress.currentFile && (
-                      <div className="bg-black border-2 border-gray-400 rounded-lg overflow-hidden shadow-sm">
-                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span className="font-mono text-sm">{generationProgress.currentFile.path}</span>
-                            <span className={`px-2 py-0.5 text-xs rounded ${
-                              generationProgress.currentFile.type === 'css' ? 'bg-blue-600 text-white' :
-                              generationProgress.currentFile.type === 'javascript' ? 'bg-yellow-600 text-white' :
-                              generationProgress.currentFile.type === 'json' ? 'bg-green-600 text-white' :
-                              'bg-gray-200 text-gray-700'
-                            }`}>
-                              {generationProgress.currentFile.type === 'javascript' ? 'JSX' : generationProgress.currentFile.type.toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700 rounded">
-                          <SyntaxHighlighter
-                            language={
-                              generationProgress.currentFile.type === 'css' ? 'css' :
-                              generationProgress.currentFile.type === 'json' ? 'json' :
-                              generationProgress.currentFile.type === 'html' ? 'html' :
-                              'jsx'
-                            }
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              padding: '1rem',
-                              fontSize: '0.75rem',
-                              background: 'transparent',
-                            }}
-                            showLineNumbers={true}
-                          >
-                            {generationProgress.currentFile.content}
-                          </SyntaxHighlighter>
-                          <span className="inline-block w-3 h-4 bg-[var(--mx-menu)] ml-4 mb-4 animate-pulse" />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Show completed files */}
-                    {generationProgress.files.map((file, idx) => (
-                      <div key={idx} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-500">✓</span>
-                            <span className="font-mono text-sm">{file.path}</span>
-                          </div>
-                          <span className={`px-2 py-0.5 text-xs rounded ${
-                            file.type === 'css' ? 'bg-blue-600 text-white' :
-                            file.type === 'javascript' ? 'bg-yellow-600 text-white' :
-                            file.type === 'json' ? 'bg-green-600 text-white' :
-                            'bg-gray-200 text-gray-700'
-                          }`}>
-                            {file.type === 'javascript' ? 'JSX' : file.type.toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700  max-h-48 overflow-y-auto scrollbar-hide">
-                          <SyntaxHighlighter
-                            language={
-                              file.type === 'css' ? 'css' :
-                              file.type === 'json' ? 'json' :
-                              file.type === 'html' ? 'html' :
-                              'jsx'
-                            }
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              padding: '1rem',
-                              fontSize: '0.75rem',
-                              background: 'transparent',
-                            }}
-                            showLineNumbers={true}
-                            wrapLongLines={true}
-                          >
-                            {file.content}
-                          </SyntaxHighlighter>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Show remaining raw stream if there's content after the last file */}
-                    {!generationProgress.currentFile && generationProgress.isGenerating && generationProgress.streamedCode.length > 0 && (
-                      <div className="bg-black border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="px-4 py-2 bg-[#4B5CF0] text-white flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-16 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                            <span className="font-mono text-sm">Procesando...</span>
-                          </div>
-                        </div>
-                        <div className="bg-gray-900 border border-gray-700 rounded">
-                          <SyntaxHighlighter
-                            language="jsx"
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              padding: '1rem',
-                              fontSize: '0.75rem',
-                              background: 'transparent',
-                            }}
-                            showLineNumbers={false}
-                          >
-                            {(() => {
-                              // Show only the tail of the stream after the last file
-                              const lastFileEnd = generationProgress.files.length > 0 
-                                ? generationProgress.streamedCode.lastIndexOf('</file>') + 7
-                                : 0;
-                              let remainingContent = generationProgress.streamedCode.slice(lastFileEnd).trim();
-                              
-                              // Remove explanation tags and content
-                              remainingContent = remainingContent.replace(/<explanation>[\s\S]*?<\/explanation>/g, '').trim();
 
-                              // If only whitespace or nothing left, show loading message
-                              // Use "Loading sandbox..." instead of "Waiting for next file..." for better UX
-                              return remainingContent || 'Cargando sandbox...';
-                            })()}
-                          </SyntaxHighlighter>
-                        </div>
-                      </div>
-                    )}
+            {activeCodePath ? (
+              <>
+                <div className="mx-code-ide__tabbar">
+                  <div className="mx-code-ide__tab is-active">
+                    {getFileIcon(activeCodePath)}
+                    <span>{activeCodePath.split('/').pop()}</span>
+                    {isLiveFile ? <span className="mx-code-ide__live">escribiendo</span> : null}
+                    {selectedFile ? (
+                      <button
+                        type="button"
+                        className="mx-code-ide__tab-close"
+                        onClick={() => setSelectedFile(null)}
+                        aria-label="Cerrar archivo"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    ) : null}
                   </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Progress indicator */}
-            {generationProgress.components.length > 0 && (
-              <div className="mx-6 mb-6">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-[var(--mx-menu)] to-[color-mix(in_srgb,var(--mx-menu)_70%,white)] transition-all duration-300"
-                    style={{
-                      width: `${(generationProgress.currentComponent / Math.max(generationProgress.components.length, 1)) * 100}%`
-                    }}
-                  />
+                  <span className="mx-code-ide__path">{activeCodePath}</span>
                 </div>
+                <div className="mx-code-ide__code scrollbar-hide" ref={codeDisplayRef}>
+                  <SyntaxHighlighter
+                    language={activeLanguage}
+                    style={vscDarkPlus}
+                    customStyle={{
+                      margin: 0,
+                      padding: '1.1rem 1rem',
+                      fontSize: '13px',
+                      lineHeight: '1.55',
+                      background: 'transparent',
+                      minHeight: '100%',
+                    }}
+                    showLineNumbers
+                    wrapLongLines
+                  >
+                    {activeContent || '// Esperando contenido…'}
+                  </SyntaxHighlighter>
+                  {isLiveFile ? <span className="mx-code-ide__caret" aria-hidden /> : null}
+                </div>
+              </>
+            ) : generationProgress.isGenerating ? (
+              <div className="mx-code-ide__empty">
+                <div className="mx-code-ide__empty-spinner" />
+                <p className="mx-code-ide__empty-title">Generando código…</p>
+                <p className="mx-code-ide__empty-sub">
+                  {generationProgress.status || 'Preparando archivos'}
+                </p>
+              </div>
+            ) : (
+              <div className="mx-code-ide__empty">
+                <p className="mx-code-ide__empty-title">Selecciona un archivo</p>
+                <p className="mx-code-ide__empty-sub">Elige uno del explorador para ver su código</p>
               </div>
             )}
           </div>
@@ -1542,13 +1407,15 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
       
       // Show sandbox iframe - keep showing during edits, only hide during initial loading
       if (sandboxData?.url) {
+        const iframeSrc = previewSrc || sandboxData.url;
         return (
-          <div className="relative w-full h-full">
+          <div className="absolute inset-0 bg-white">
             <iframe
+              key={iframeSrc}
               ref={iframeRef}
-              src={sandboxData.url}
-              className="w-full h-full border-none"
-              title="Preview"
+              src={iframeSrc}
+              className="absolute inset-0 w-full h-full border-0"
+              title="Vista previa"
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             />
@@ -1556,17 +1423,9 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
             {/* Package installation overlay - shows when installing packages or applying code */}
             {codeApplicationState.stage && codeApplicationState.stage !== 'complete' && (
               <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center z-10">
-                <div className="text-center max-w-md">
+                <div className="text-center max-w-md px-6">
                   <div className="mb-6">
-                    {/* Animated icon based on stage */}
-                    {codeApplicationState.stage === 'installing' ? (
-                      <div className="w-16 h-16 mx-auto">
-                        <svg className="w-full h-full animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                      </div>
-                    ) : null}
+                    <div className="w-12 h-12 mx-auto border-2 border-gray-300 border-t-[var(--mx-menu)] rounded-full animate-spin" />
                   </div>
                   
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -1598,7 +1457,6 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                     </div>
                   )}
                   
-                  {/* Files being generated */}
                   {codeApplicationState.stage === 'applying' && codeApplicationState.filesGenerated && (
                     <div className="text-sm text-gray-600">
                       Creando {codeApplicationState.filesGenerated.length} archivos...
@@ -1614,24 +1472,21 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
               </div>
             )}
             
-            {/* Show a subtle indicator when code is being edited/generated */}
             {generationProgress.isGenerating && generationProgress.isEdit && !codeApplicationState.stage && (
-              <div className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg">
+              <div className="absolute top-4 right-4 inline-flex items-center gap-2 px-3 py-1.5 bg-black/80 backdrop-blur-sm rounded-lg z-10">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 <span className="text-white text-xs font-medium">Generando código...</span>
               </div>
             )}
             
-            {/* Refresh button */}
             <button
               onClick={() => {
-                if (iframeRef.current && sandboxData?.url) {
-                  console.log('[Manual Refresh] Forcing iframe reload...');
-                  const newSrc = `${sandboxData.url}?t=${Date.now()}&manual=true`;
-                  iframeRef.current.src = newSrc;
+                if (sandboxData?.url) {
+                  const next = `${sandboxData.url}${sandboxData.url.includes('?') ? '&' : '?'}t=${Date.now()}&manual=1`;
+                  setPreviewSrc(next);
                 }
               }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+              className="absolute bottom-4 right-4 z-10 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
               title="Actualizar sandbox"
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1796,7 +1651,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                 const data = JSON.parse(line.slice(6));
                 
                 if (data.type === 'status') {
-                  setGenerationProgress(prev => ({ ...prev, status: data.message }));
+                  setGenerationProgress(prev => ({ ...prev, status: toSpanishGenerationStatus(data.message) }));
                 } else if (data.type === 'thinking') {
                   setGenerationProgress(prev => ({ 
                     ...prev, 
@@ -1883,7 +1738,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                         
                         // Only show file status if not in edit mode
                         if (!prev.isEdit) {
-                          updatedState.status = `Completed ${filePath}`;
+                          updatedState.status = toSpanishGenerationStatus(`Completed ${filePath}`);
                         }
                         processedFiles.add(filePath);
                       }
@@ -1909,7 +1764,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                         };
                         // Only show file status if not in edit mode
                         if (!prev.isEdit) {
-                          updatedState.status = `Generating ${filePath}`;
+                          updatedState.status = toSpanishGenerationStatus(`Generating ${filePath}`);
                         }
                       }
                     } else {
@@ -1921,12 +1776,12 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                 } else if (data.type === 'app') {
                   setGenerationProgress(prev => ({ 
                     ...prev, 
-                    status: 'Generated App.jsx structure'
+                    status: 'Estructura de App.jsx generada'
                   }));
                 } else if (data.type === 'component') {
                   setGenerationProgress(prev => ({
                     ...prev,
-                    status: `Generated ${data.name}`,
+                    status: toSpanishGenerationStatus(`Generated ${data.name}`),
                     components: [...prev.components, { 
                       name: data.name, 
                       path: data.path, 
@@ -1938,7 +1793,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                   // Handle package installation from tool calls
                   setGenerationProgress(prev => ({
                     ...prev,
-                    status: data.message || `Installing ${data.name}`
+                    status: toSpanishGenerationStatus(data.message || `Installing ${data.name}`)
                   }));
                 } else if (data.type === 'complete') {
                   generatedCode = data.generatedCode;
@@ -1997,7 +1852,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
                   
                   setGenerationProgress(prev => ({
                     ...prev,
-                    status: `Generated ${parsedFiles.length > 0 ? parsedFiles.length : prev.files.length} file${(parsedFiles.length > 0 ? parsedFiles.length : prev.files.length) !== 1 ? 's' : ''}!`,
+                    status: toSpanishGenerationStatus(`Generated ${parsedFiles.length > 0 ? parsedFiles.length : prev.files.length} file${(parsedFiles.length > 0 ? parsedFiles.length : prev.files.length) !== 1 ? 's' : ''}!`),
                     isGenerating: false,
                     isStreaming: false,
                     isEdit: prev.isEdit,
@@ -2201,7 +2056,42 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
 
   const handleFileClick = async (filePath: string) => {
     setSelectedFile(filePath);
-    // TODO: Add file content fetching logic here
+    setActiveTab('generation');
+
+    // Expand parent folders so the explorer highlights the file
+    const parts = filePath.split('/');
+    if (parts.length > 1) {
+      setExpandedFolders(prev => {
+        const next = new Set(prev);
+        next.add('app');
+        let acc = '';
+        for (let i = 0; i < parts.length - 1; i++) {
+          acc = acc ? `${acc}/${parts[i]}` : parts[i];
+          next.add(acc);
+        }
+        return next;
+      });
+    }
+  };
+
+  const resolveFileContent = (filePath: string): string => {
+    const fromProgress = generationProgress.files.find(
+      f => f.path === filePath || f.path.endsWith(`/${filePath}`) || filePath.endsWith(f.path)
+    );
+    if (fromProgress?.content) return fromProgress.content;
+
+    if (generationProgress.currentFile?.path === filePath && generationProgress.currentFile.content) {
+      return generationProgress.currentFile.content;
+    }
+
+    if (sandboxFiles[filePath]) return sandboxFiles[filePath];
+
+    const sandboxEntry = Object.entries(sandboxFiles).find(
+      ([key]) => key === filePath || key.endsWith(`/${filePath}`) || filePath.endsWith(key)
+    );
+    if (sandboxEntry?.[1]) return sandboxEntry[1];
+
+    return '// Contenido del archivo no disponible todavía';
   };
 
   const getFileIcon = (fileName: string) => {
@@ -2433,7 +2323,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
 //                 } else if (data.type === 'component') {
 //                   setGenerationProgress(prev => ({
 //                     ...prev,
-//                     status: `Generated ${data.name}`,
+//                     status: toSpanishGenerationStatus(`Generated ${data.name}`),
 //                     components: [...prev.components, { 
 //                       name: data.name,
 //                       path: data.path,
@@ -2634,13 +2524,13 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
 
     if (isDirectPrompt) {
       const attachedImages = initialPromptImagesRef.current;
-      addChatMessage(homeUrlInput.trim() || 'Generate from reference images', 'user', attachedImages.length ? { images: attachedImages } : undefined);
-      addChatMessage('Creating a sandbox and generating your app from the prompt...', 'system');
+      addChatMessage(homeUrlInput.trim() || 'Generar a partir de imágenes de referencia', 'user', attachedImages.length ? { images: attachedImages } : undefined);
+      addChatMessage('Creando un sandbox y generando tu app a partir del prompt...', 'system');
     } else {
       addChatMessage(
         brandExtensionMode
-          ? `Analyzing brand from ${cleanUrl}...`
-          : `Starting to clone ${cleanUrl}...`,
+          ? `Analizando la marca de ${cleanUrl}...`
+          : `Empezando a clonar ${cleanUrl}...`,
         'system'
       );
     }
@@ -2672,7 +2562,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
       // Now start the clone process which will stream the generation
       setUrlInput(isDirectPrompt ? '' : homeUrlInput);
       setUrlOverlayVisible(false); // Make sure overlay is closed
-      setUrlStatus(isDirectPrompt ? ['Planning your app...', 'Generating React app...'] : ['Scraping website content...']);
+      setUrlStatus(isDirectPrompt ? ['Planificando tu app...', 'Generando la app React...'] : ['Extrayendo el contenido del sitio...']);
       
       try {
         // Scrape the website
@@ -2691,10 +2581,10 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
         let brandGuidelines: any;
 
         if (isDirectPrompt) {
-          addChatMessage('Generating a React app from your prompt...', 'system');
+          addChatMessage('Generando una app a partir de tu prompt...', 'system');
         } else if (brandExtensionMode) {
           // === BRAND EXTENSION MODE ===
-          addChatMessage('Extracting brand styles from the website...', 'system');
+          addChatMessage('Extrayendo estilos de marca del sitio...', 'system');
 
           // Call the brand extraction endpoint
           const extractResponse = await fetch('/api/extract-brand-styles', {
@@ -2717,11 +2607,11 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
           }
 
           // Display branding summary with visual UI
-          addChatMessage(`Acquired branding format from ${cleanUrl}`, 'system', {
+          addChatMessage(`Formato de marca obtenido de ${cleanUrl}`, 'system', {
             brandingData: brandGuidelines.guidelines,
             sourceUrl: cleanUrl
           });
-          addChatMessage(`Building your custom component using these brand guidelines...`, 'system');
+          addChatMessage(`Construyendo tu componente con estas guías de marca...`, 'system');
 
           // Clear the flags after use
           sessionStorage.removeItem('brandExtensionMode');
@@ -2740,7 +2630,7 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
             source: 'search-result'
           };
           sessionStorage.removeItem('siteMarkdown'); // Clear after use
-          addChatMessage('Using cached content from search results...', 'system');
+          addChatMessage('Usando contenido en caché de los resultados de búsqueda...', 'system');
         } else {
           // Perform fresh scraping
           const scrapeResponse = await fetch('/api/scrape-url-enhanced', {
@@ -2763,10 +2653,10 @@ Consejo: detecto e instalo automáticamente los paquetes npm de tus imports (rea
 
         setUrlStatus(
           isDirectPrompt
-            ? ['Prompt ready!', 'Generating React app...']
+            ? ['¡Prompt listo!', 'Generando la app React...']
             : brandExtensionMode
-              ? ['Brand styles extracted!', 'Building your component...']
-              : ['Website scraped successfully!', 'Generating React app...']
+              ? ['¡Estilos de marca extraídos!', 'Construyendo tu componente...']
+              : ['¡Sitio extraído correctamente!', 'Generando la app React...']
         );
 
         // Clear preparing design state and switch to generation tab
@@ -3018,7 +2908,7 @@ Focus on the key sections and content, making it clean and modern.`;
 
         setGenerationProgress(prev => ({
           isGenerating: true,
-          status: 'Initializing AI...',
+          status: 'Inicializando la IA...',
           components: [],
           currentComponent: 0,
           streamedCode: '',
@@ -3069,7 +2959,7 @@ Focus on the key sections and content, making it clean and modern.`;
                 const data = JSON.parse(line.slice(6));
                 
                 if (data.type === 'status') {
-                  setGenerationProgress(prev => ({ ...prev, status: data.message }));
+                  setGenerationProgress(prev => ({ ...prev, status: toSpanishGenerationStatus(data.message) }));
                 } else if (data.type === 'thinking') {
                   setGenerationProgress(prev => ({ 
                     ...prev, 
@@ -3156,7 +3046,7 @@ Focus on the key sections and content, making it clean and modern.`;
                         
                         // Only show file status if not in edit mode
                         if (!prev.isEdit) {
-                          updatedState.status = `Completed ${filePath}`;
+                          updatedState.status = toSpanishGenerationStatus(`Completed ${filePath}`);
                         }
                         processedFiles.add(filePath);
                       }
@@ -3182,7 +3072,7 @@ Focus on the key sections and content, making it clean and modern.`;
                         };
                         // Only show file status if not in edit mode
                         if (!prev.isEdit) {
-                          updatedState.status = `Generating ${filePath}`;
+                          updatedState.status = toSpanishGenerationStatus(`Generating ${filePath}`);
                         }
                       }
                     } else {
@@ -3224,7 +3114,7 @@ Focus on the key sections and content, making it clean and modern.`;
         }));
         
         if (generatedCode) {
-          addChatMessage('AI recreation generated!', 'system');
+          addChatMessage('¡Recreación de la IA generada!', 'system');
           
           // Add the explanation to chat if available
           if (explanation && explanation.trim()) {
@@ -3245,10 +3135,10 @@ Focus on the key sections and content, making it clean and modern.`;
 
           addChatMessage(
             isDirectPrompt
-              ? `Successfully built your app from the prompt${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}. You can now ask me to modify it or add more features.`
+              ? `¡App creada a partir del prompt${homeContextInput ? ` con el contexto: «${homeContextInput}»` : ''}! Ya puedes pedirme cambios o más funciones.`
               : brandExtensionMode
-              ? `Successfully built your custom component using ${cleanUrl}'s brand guidelines! You can now ask me to modify it or add more features.`
-              : `Successfully recreated ${url} as a modern React app${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}! The scraped content is now in my context, so you can ask me to modify specific sections or add features based on the original site.`,
+              ? `¡Componente personalizado creado con las guías de marca de ${cleanUrl}! Ya puedes pedirme cambios o más funciones.`
+              : `¡${url} recreado como app React moderna${homeContextInput ? ` con el contexto: «${homeContextInput}»` : ''}! El contenido analizado está en mi contexto: puedes pedirme cambios o funciones basadas en el sitio original.`,
             'ai',
             {
               scrapedUrl: isDirectPrompt ? undefined : url,
@@ -3493,7 +3383,11 @@ Focus on the key sections and content, making it clean and modern.`;
               // Check if this message is from a successful generation
               const isGenerationComplete = msg.content.includes('Successfully recreated') || 
                                          msg.content.includes('AI recreation generated!') ||
-                                         msg.content.includes('Code generated!');
+                                         msg.content.includes('Code generated!') ||
+                                         msg.content.includes('¡App creada') ||
+                                         msg.content.includes('recreado como app') ||
+                                         msg.content.includes('¡Recreación de la IA generada!') ||
+                                         msg.content.includes('¡Código generado correctamente!');
               
               // Get the files from metadata if this is a completion message
               // const completedFiles = msg.metadata?.appliedFiles || [];
@@ -3753,59 +3647,27 @@ Focus on the key sections and content, making it clean and modern.`;
 
                       {/* Show applied files if this is an apply success message */}
                       {msg.metadata?.appliedFiles && msg.metadata.appliedFiles.length > 0 && (
-                    <div className="mt-3 inline-block bg-gray-100 rounded-[10px] p-5">
-                      <div className="text-sm font-medium mb-3 text-gray-700">
-                        {msg.content.includes('Applied') ? 'Files Updated:' : 'Archivos generados:'}
-                      </div>
-                      <div className="flex flex-wrap items-start gap-2">
-                        {msg.metadata.appliedFiles.map((filePath, fileIdx) => {
-                          const fileName = filePath.split('/').pop() || filePath;
-                          const fileExt = fileName.split('.').pop() || '';
-                          const fileType = fileExt === 'jsx' || fileExt === 'js' ? 'javascript' :
-                                          fileExt === 'css' ? 'css' :
-                                          fileExt === 'json' ? 'json' : 'text';
-
-                          return (
-                            <div
-                              key={`applied-${fileIdx}`}
-                              className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-sm animate-fade-in-up"
-                              style={{ animationDelay: `${fileIdx * 30}ms` }}
-                            >
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                                fileType === 'css' ? 'bg-blue-400' :
-                                fileType === 'javascript' ? 'bg-yellow-400' :
-                                fileType === 'json' ? 'bg-green-400' :
-                                'bg-gray-400'
-                              }`} />
-                              {fileName}
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <div className="mt-3">
+                      <GenerationFileList
+                        title={msg.content.includes('Applied') || msg.content.includes('aplicado') ? 'Archivos actualizados' : 'Archivos generados'}
+                        files={msg.metadata.appliedFiles.map((filePath) => ({ path: filePath }))}
+                        allComplete
+                        selectedPath={selectedFile}
+                        onFileClick={(file) => handleFileClick(file.path)}
+                      />
                     </div>
                   )}
                   
                       {/* Show generated files for completion messages - but only if no appliedFiles already shown */}
                       {isGenerationComplete && generationProgress.files.length > 0 && idx === chatMessages.length - 1 && !msg.metadata?.appliedFiles && !chatMessages.some(m => m.metadata?.appliedFiles) && (
-                    <div className="mt-2 inline-block bg-gray-100 rounded-[10px] p-3">
-                      <div className="text-xs font-medium mb-1 text-gray-700">Archivos generados:</div>
-                      <div className="flex flex-wrap items-start gap-1">
-                        {generationProgress.files.map((file, fileIdx) => (
-                          <div
-                            key={`complete-${fileIdx}`}
-                            className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-xs animate-fade-in-up"
-                            style={{ animationDelay: `${fileIdx * 30}ms` }}
-                          >
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                              file.type === 'css' ? 'bg-blue-400' :
-                              file.type === 'javascript' ? 'bg-yellow-400' :
-                              file.type === 'json' ? 'bg-green-400' :
-                              'bg-gray-400'
-                            }`} />
-                            {file.path.split('/').pop()}
-                          </div>
-                        ))}
-                      </div>
+                    <div className="mt-2">
+                      <GenerationFileList
+                        title="Archivos generados"
+                        files={generationProgress.files}
+                        allComplete
+                        selectedPath={selectedFile}
+                        onFileClick={(file) => handleFileClick(file.path)}
+                      />
                     </div>
                   )}
                     </div>
@@ -3819,79 +3681,15 @@ Focus on the key sections and content, making it clean and modern.`;
               <CodeApplicationProgress state={codeApplicationState} />
             )}
             
-            {/* File generation progress - inline display (during generation) */}
+            {/* File generation progress */}
             {generationProgress.isGenerating && (
-              <div className="inline-block bg-gray-100 rounded-lg p-3">
-                <div className="text-sm font-medium mb-2 text-gray-700">
-                  {generationProgress.status}
-                </div>
-                <div className="flex flex-wrap items-start gap-1">
-                  {/* Show completed files */}
-                  {generationProgress.files.map((file, idx) => (
-                    <div
-                      key={`file-${idx}`}
-                      className="inline-flex items-center gap-1.5 px-6 py-1.5 bg-[#4B5CF0] text-white rounded-[10px] text-xs animate-fade-in-up"
-                      style={{ animationDelay: `${idx * 30}ms` }}
-                    >
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {file.path.split('/').pop()}
-                    </div>
-                  ))}
-                  
-                  {/* Show current file being generated */}
-                  {generationProgress.currentFile && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-[#4B5CF0]/70 text-white rounded-[10px] text-sm animate-pulse"
-                      style={{ animationDelay: `${generationProgress.files.length * 30}ms` }}>
-                      <div className="w-16 h-16 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {generationProgress.currentFile.path.split('/').pop()}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Live streaming response display */}
-                {generationProgress.streamedCode && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-3 border-t border-gray-300 pt-3"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-medium text-gray-600">Respuesta de la IA en directo</span>
-                      </div>
-                      <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent" />
-                    </div>
-                    <div className="bg-gray-900 border border-gray-700 rounded max-h-128 overflow-y-auto scrollbar-hide">
-                      <SyntaxHighlighter
-                        language="jsx"
-                        style={vscDarkPlus}
-                        customStyle={{
-                          margin: 0,
-                          padding: '0.75rem',
-                          fontSize: '11px',
-                          lineHeight: '1.5',
-                          background: 'transparent',
-                          maxHeight: '8rem',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {(() => {
-                          const lastContent = generationProgress.streamedCode.slice(-1000);
-                          // Show the last part of the stream, starting from a complete tag if possible
-                          const startIndex = lastContent.indexOf('<');
-                          return startIndex !== -1 ? lastContent.slice(startIndex) : lastContent;
-                        })()}
-                      </SyntaxHighlighter>
-                      <span className="inline-block w-3 h-4 bg-[var(--mx-menu)] ml-3 mb-3 animate-pulse" />
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+              <GenerationFileList
+                title={generationProgress.status || 'Generando código...'}
+                files={generationProgress.files}
+                currentFile={generationProgress.currentFile}
+                selectedPath={selectedFile}
+                onFileClick={(file) => handleFileClick(file.path)}
+              />
             )}
           </div>
 

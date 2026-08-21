@@ -279,7 +279,9 @@
 
 /* Remove all focus styles from hero input */
 input[type="text"]:focus,
-input[type="text"]:focus-visible {
+input[type="text"]:focus-visible,
+textarea:focus,
+textarea:focus-visible {
   outline: none !important;
   box-shadow: none !important;
   border-color: inherit !important;

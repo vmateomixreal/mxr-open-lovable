@@ -1611,7 +1611,7 @@ It's better to have 3 complete files than 10 incomplete files.`
         
         // Extract explanation
         const explanationMatch = generatedCode.match(/<explanation>([\s\S]*?)<\/explanation>/);
-        const explanation = explanationMatch ? explanationMatch[1].trim() : 'Code generated successfully!';
+        const explanation = explanationMatch ? explanationMatch[1].trim() : '¡Código generado correctamente!';
         
         // Validate generated code for truncation issues
         const truncationWarnings: string[] = [];

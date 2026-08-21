@@ -124,7 +124,7 @@ export default function HeroInput({
           <div className="flex-1 min-w-0 flex flex-col gap-10">
             <textarea
               ref={textareaRef}
-              className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none min-h-[24px] leading-6"
+              className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 resize-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 min-h-[24px] leading-6"
               placeholder={placeholder}
               value={value}
               onChange={(e) => onChange(e.target.value)}

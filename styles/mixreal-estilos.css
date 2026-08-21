@@ -380,6 +380,8 @@
    14 · ACCESIBILIDAD
    ========================================================================== */
 .mx :focus-visible{outline:2px solid var(--mx-menu);outline-offset:3px;border-radius:4px}
+.mx-workspace__chat :focus-visible,
+.mx-workspace__chat textarea:focus-visible{outline:none!important;box-shadow:none!important}
 
 @media (prefers-reduced-motion:reduce){
   .mx *,.mx *::before,.mx *::after{

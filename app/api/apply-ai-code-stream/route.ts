@@ -795,6 +795,23 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Vite runs with HMR disabled — restart after writing files so the preview picks them up
+        try {
+          await sendProgress({
+            type: 'info',
+            message: 'Reiniciando el servidor de vista previa...',
+          });
+          if (typeof providerInstance.restartViteServer === 'function') {
+            await providerInstance.restartViteServer();
+          }
+        } catch (restartError) {
+          console.warn('[apply-ai-code-stream] Vite restart after apply failed:', restartError);
+          await sendProgress({
+            type: 'warning',
+            message: 'No se pudo reiniciar Vite automáticamente. Usa el botón de actualizar en la vista.',
+          });
+        }
+
         // Send final results
         await sendProgress({
           type: 'complete',
