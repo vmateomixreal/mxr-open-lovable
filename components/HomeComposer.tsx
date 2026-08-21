@@ -172,15 +172,15 @@ export default function HomeComposer({
       ) : (
         <>
           {scrapperEnabled ? (
-            <input
-              className="home-composer__field"
-              placeholder="Pide una referencia web o pega una URL para clonar..."
-              type="text"
+            <textarea
+              className="home-composer__field home-composer__field--area"
+              placeholder="Inspírate de una referencia web..."
               value={value}
+              rows={2}
               disabled={isSearching}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !isSearching) {
+                if (e.key === 'Enter' && !e.shiftKey && !isSearching) {
                   e.preventDefault();
                   onSubmit();
                 }
@@ -294,7 +294,7 @@ export default function HomeComposer({
               value={selectedModel}
               onChange={onModelChange}
               className="home-composer__model"
-              variant="light"
+              variant="dark"
             />
           </ModelSelectorGate>
         </div>

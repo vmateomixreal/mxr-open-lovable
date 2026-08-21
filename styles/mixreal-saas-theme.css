@@ -80,10 +80,21 @@ html.theme-saas .home-composer__mode-menu button:hover {
 }
 
 html.theme-saas .home-composer {
+  width: min(760px, 100%);
   border-radius: var(--radius);
   border: 1px solid var(--border-primary);
-  background: var(--bg-primary);
+  background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(56px) saturate(180%);
+  -webkit-backdrop-filter: blur(56px) saturate(180%);
+}
+
+html.theme-saas .tpl-panel {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  backdrop-filter: blur(72px) saturate(190%);
+  -webkit-backdrop-filter: blur(72px) saturate(190%);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
 }
 
 html.theme-saas .home-composer__model-trigger,

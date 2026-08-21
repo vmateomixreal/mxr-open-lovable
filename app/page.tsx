@@ -216,58 +216,60 @@ export default function HomePage() {
           </div>
         </section>
 
-        <div className="mx-home-composer-slot relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(44px,6vw,72px)]">
-          <HomeComposer
-            value={url}
-            onChange={(value) => {
-              setUrl(value);
-              if (scrapperEnabled) {
-                setIsValidUrl(validateUrl(value));
-                if (value.trim() === '') {
-                  setHasSearched(false);
-                  setSearchResults([]);
-                  setIsSearching(false);
+        <div className="mx-home-main">
+          <div className="mx-home-composer-slot relative z-[2]">
+            <HomeComposer
+              value={url}
+              onChange={(value) => {
+                setUrl(value);
+                if (scrapperEnabled) {
+                  setIsValidUrl(validateUrl(value));
+                  if (value.trim() === '') {
+                    setHasSearched(false);
+                    setSearchResults([]);
+                    setIsSearching(false);
+                  }
+                } else {
+                  setIsValidUrl(false);
                 }
-              } else {
-                setIsValidUrl(false);
+              }}
+              scrapperEnabled={scrapperEnabled}
+              onToggleMode={toggleScrapper}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              promptImages={promptImages}
+              onAddFiles={(files) => void addPromptFiles(files)}
+              onRemoveImage={(index) =>
+                setPromptImages((current) => current.filter((_, i) => i !== index))
               }
-            }}
+              onSubmit={() => {
+                if (!isSearching) handleSubmit();
+              }}
+              isSearching={isSearching}
+              hasSearchResults={hasSearched && searchResults.length > 0}
+              onSearchAgain={() => {
+                setSearchResults([]);
+                setHasSearched(false);
+                setIsSearching(false);
+                setUrl('');
+              }}
+              isValidUrl={isValidUrl}
+              extendBrandStyles={extendBrandStyles}
+              onExtendBrandStylesChange={setExtendBrandStyles}
+              brandInstructions={additionalInstructions}
+              onBrandInstructionsChange={setAdditionalInstructions}
+            />
+          </div>
+
+          <HomeTemplatesSection
             scrapperEnabled={scrapperEnabled}
-            onToggleMode={toggleScrapper}
-            selectedModel={selectedModel}
-            onModelChange={setSelectedModel}
-            promptImages={promptImages}
-            onAddFiles={(files) => void addPromptFiles(files)}
-            onRemoveImage={(index) =>
-              setPromptImages((current) => current.filter((_, i) => i !== index))
-            }
-            onSubmit={() => {
-              if (!isSearching) handleSubmit();
-            }}
             isSearching={isSearching}
-            hasSearchResults={hasSearched && searchResults.length > 0}
-            onSearchAgain={() => {
-              setSearchResults([]);
-              setHasSearched(false);
-              setIsSearching(false);
-              setUrl('');
-            }}
-            isValidUrl={isValidUrl}
-            extendBrandStyles={extendBrandStyles}
-            onExtendBrandStylesChange={setExtendBrandStyles}
-            brandInstructions={additionalInstructions}
-            onBrandInstructionsChange={setAdditionalInstructions}
+            hasSearched={hasSearched}
+            searchResults={searchResults}
+            onUseResult={(result) => startGenerationFromResult(result)}
+            onUsePlaceholder={handleUsePlaceholder}
           />
         </div>
-
-        <HomeTemplatesSection
-          scrapperEnabled={scrapperEnabled}
-          isSearching={isSearching}
-          hasSearched={hasSearched}
-          searchResults={searchResults}
-          onUseResult={(result) => startGenerationFromResult(result)}
-          onUsePlaceholder={handleUsePlaceholder}
-        />
       </div>
     </HeaderProvider>
   );

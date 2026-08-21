@@ -119,6 +119,14 @@ export default function HomeTemplatesSection({
         ? 'Esperando búsqueda...'
         : null;
 
+  const panelStateClass = !scrapperEnabled
+    ? ''
+    : isSearching
+      ? 'is-reference-searching'
+      : !hasSearched
+        ? 'is-reference-waiting'
+        : '';
+
   useEffect(() => {
     if (!browseAllOpen && !preview) return;
     const onKey = (event: KeyboardEvent) => {
@@ -186,7 +194,7 @@ export default function HomeTemplatesSection({
   return (
     <>
       <section className="templates-section mx-entra" style={{ ['--mx-orden' as string]: 2 }}>
-        <div className="tpl-panel">
+        <div className={`tpl-panel ${panelStateClass}`.trim()}>
           <div className="tpl-toolbar">
             <div className="tpl-tabs" role="tablist" aria-label="Secciones">
               <button type="button" className="tpl-tab is-active" role="tab" aria-selected>
@@ -219,11 +227,11 @@ export default function HomeTemplatesSection({
 
           <div className="tpl-stage">
             {renderGrid(cards)}
-            {overlayLabel && (
-              <div className="tpl-overlay" aria-live="polite">
+            <div className="tpl-overlay" aria-live="polite" aria-hidden={!overlayLabel}>
+              {overlayLabel ? (
                 <p className="tpl-overlay__text">{overlayLabel}</p>
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
         </div>
       </section>
