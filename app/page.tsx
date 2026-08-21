@@ -5,6 +5,9 @@ import { HeaderProvider } from "@/components/shared/header/HeaderContext";
 import { getStoredModel } from "@/components/ModelSelect";
 import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 import HomeComposer from "@/components/HomeComposer";
+import HomeTemplatesSection, {
+  type TemplateCard,
+} from "@/components/HomeTemplatesSection";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,13 +26,9 @@ export default function HomePage() {
   const [url, setUrl] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>(appConfig.ai.defaultModel);
   const [isValidUrl, setIsValidUrl] = useState<boolean>(false);
-  const [showSearchTiles, setShowSearchTiles] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
-  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
-  const [showSelectMessage, setShowSelectMessage] = useState<boolean>(false);
-  const [showInstructionsForIndex, setShowInstructionsForIndex] = useState<number | null>(null);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
   const [scrapperEnabled, setScrapperEnabled] = useState<boolean>(false);
@@ -44,6 +43,15 @@ export default function HomePage() {
     setSelectedModel(getStoredModel());
   }, []);
 
+  const scrollToTemplates = () => {
+    setTimeout(() => {
+      document.querySelector('.templates-section')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 120);
+  };
+
   const toggleScrapper = () => {
     const next = !scrapperEnabled;
     setScrapperEnabled(next);
@@ -51,13 +59,14 @@ export default function HomePage() {
     if (!next) {
       setSearchResults([]);
       setHasSearched(false);
-      setShowSearchTiles(false);
-      setShowSelectMessage(false);
       setIsSearching(false);
       setExtendBrandStyles(false);
       setIsValidUrl(false);
     } else {
       setPromptImages([]);
+      setSearchResults([]);
+      setHasSearched(false);
+      setIsSearching(false);
       setIsValidUrl(validateUrl(url));
     }
   };
@@ -73,16 +82,36 @@ export default function HomePage() {
       toast.error('No se pudo adjuntar esa imagen. Prueba con otro archivo.');
     }
   };
-  
-  // Simple URL validation
+
   const validateUrl = (urlString: string) => {
     if (!urlString) return false;
-    // Basic URL pattern - accepts domains with or without protocol
     const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
     return urlPattern.test(urlString.toLowerCase());
   };
 
   const isURL = (str: string): boolean => isLikelyUrl(str);
+
+  const startGenerationFromResult = (selectedResult: SearchResult) => {
+    sessionStorage.setItem('targetUrl', selectedResult.url);
+    sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
+    sessionStorage.setItem('autoStart', 'true');
+    if (selectedResult.markdown) {
+      sessionStorage.setItem('siteMarkdown', selectedResult.markdown);
+    }
+    router.push('/generation');
+  };
+
+  const handleUsePlaceholder = (template: TemplateCard) => {
+    const promptText = `Crea una app React inspirada en la plantilla "${template.title}". ${template.description}.`;
+    setPendingPromptImages([]);
+    sessionStorage.setItem('directPrompt', promptText);
+    sessionStorage.setItem('directPromptMode', 'true');
+    sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
+    sessionStorage.setItem('autoStart', 'true');
+    sessionStorage.removeItem('selectedStyle');
+    sessionStorage.removeItem('additionalInstructions');
+    router.push('/generation');
+  };
 
   const handleSubmit = async (selectedResult?: SearchResult) => {
     const inputValue = url.trim();
@@ -105,33 +134,18 @@ export default function HomePage() {
       return;
     }
 
-    // Validate brand extension mode requirements
     if (extendBrandStyles && isURL(inputValue) && !additionalInstructions.trim()) {
       toast.error("Describe lo que quieres crear con los estilos de esta marca");
       return;
     }
-    
-    // If it's a search result being selected, fade out and redirect
+
     if (selectedResult) {
-      setIsFadingOut(true);
-      
-      // Wait for fade animation
-      setTimeout(() => {
-        sessionStorage.setItem('targetUrl', selectedResult.url);
-        sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
-        sessionStorage.setItem('autoStart', 'true');
-        if (selectedResult.markdown) {
-          sessionStorage.setItem('siteMarkdown', selectedResult.markdown);
-        }
-        router.push('/generation');
-      }, 500);
+      startGenerationFromResult(selectedResult);
       return;
     }
-    
-    // If it's a URL, check if we're extending brand styles or cloning
+
     if (isURL(inputValue)) {
       if (extendBrandStyles) {
-        // Brand extension mode - extract brand styles and use them with the prompt
         sessionStorage.setItem('targetUrl', inputValue);
         sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
         sessionStorage.setItem('autoStart', 'true');
@@ -139,76 +153,31 @@ export default function HomePage() {
         sessionStorage.setItem('brandExtensionPrompt', additionalInstructions || '');
         router.push('/generation');
       } else {
-        // Normal clone mode
         sessionStorage.setItem('targetUrl', inputValue);
         sessionStorage.setItem('selectedModel', appConfig.ui.showModelSelector ? selectedModel : appConfig.ai.lockedModel);
         sessionStorage.setItem('autoStart', 'true');
         router.push('/generation');
       }
-    } else {
-      // It's a search term, fade out if results exist, then search
-      if (hasSearched && searchResults.length > 0) {
-        setIsFadingOut(true);
-        
-        setTimeout(async () => {
-          setSearchResults([]);
-          setIsFadingOut(false);
-          setShowSelectMessage(true);
-          
-          // Perform new search
-          await performSearch(inputValue);
-          setHasSearched(true);
-          setShowSearchTiles(true);
-          setShowSelectMessage(false);
-          
-          // Smooth scroll to carousel
-          setTimeout(() => {
-            const carouselSection = document.querySelector('.carousel-section');
-            if (carouselSection) {
-              carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          }, 300);
-        }, 500);
-      } else {
-        // First search, no fade needed
-        setShowSelectMessage(true);
-        setIsSearching(true);
-        setHasSearched(true);
-        setShowSearchTiles(true);
-        
-        // Scroll to carousel area immediately
-        setTimeout(() => {
-          const carouselSection = document.querySelector('.carousel-section');
-          if (carouselSection) {
-            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 100);
-        
-        await performSearch(inputValue);
-        setShowSelectMessage(false);
-        setIsSearching(false);
-        
-        // Smooth scroll to carousel
-        setTimeout(() => {
-          const carouselSection = document.querySelector('.carousel-section');
-          if (carouselSection) {
-            carouselSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 300);
-      }
+      return;
     }
+
+    setSearchResults([]);
+    setHasSearched(true);
+    setIsSearching(true);
+    scrollToTemplates();
+    await performSearch(inputValue);
   };
 
-  // Perform search when user types
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery.trim() || isURL(searchQuery)) {
       setSearchResults([]);
-      setShowSearchTiles(false);
+      setHasSearched(false);
+      setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
-    setShowSearchTiles(true);
+    setHasSearched(true);
     try {
       const response = await fetch('/api/search', {
         method: 'POST',
@@ -220,7 +189,6 @@ export default function HomePage() {
         const data = await response.json();
         const results = data.results || [];
         setSearchResults(results);
-        setShowSearchTiles(true);
         if (results.length === 0) {
           toast.error('No se encontraron sitios. Prueba con otra búsqueda.');
         }
@@ -248,378 +216,59 @@ export default function HomePage() {
           </div>
         </section>
 
-          <div className="mx-home-composer-slot relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(80px,12vw,160px)]">
-            <HomeComposer
-              value={url}
-              onChange={(value) => {
-                setUrl(value);
-                if (scrapperEnabled) {
-                  setIsValidUrl(validateUrl(value));
-                  if (value.trim() === '') {
-                    setShowSearchTiles(false);
-                    setHasSearched(false);
-                    setSearchResults([]);
-                  }
-                } else {
-                  setIsValidUrl(false);
-                }
-              }}
-              scrapperEnabled={scrapperEnabled}
-              onToggleMode={toggleScrapper}
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-              promptImages={promptImages}
-              onAddFiles={(files) => void addPromptFiles(files)}
-              onRemoveImage={(index) =>
-                setPromptImages((current) => current.filter((_, i) => i !== index))
-              }
-              onSubmit={() => {
-                if (!isSearching) handleSubmit();
-              }}
-              isSearching={isSearching}
-              hasSearchResults={hasSearched && searchResults.length > 0 && !isFadingOut}
-              onSearchAgain={() => {
-                setIsFadingOut(true);
-                setTimeout(() => {
-                  setSearchResults([]);
+        <div className="mx-home-composer-slot relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(44px,6vw,72px)]">
+          <HomeComposer
+            value={url}
+            onChange={(value) => {
+              setUrl(value);
+              if (scrapperEnabled) {
+                setIsValidUrl(validateUrl(value));
+                if (value.trim() === '') {
                   setHasSearched(false);
-                  setShowSearchTiles(false);
-                  setIsFadingOut(false);
-                  setUrl('');
-                }, 500);
-              }}
-              isValidUrl={isValidUrl}
-              extendBrandStyles={extendBrandStyles}
-              onExtendBrandStylesChange={setExtendBrandStyles}
-              brandInstructions={additionalInstructions}
-              onBrandInstructionsChange={setAdditionalInstructions}
-            />
-          </div>
+                  setSearchResults([]);
+                  setIsSearching(false);
+                }
+              } else {
+                setIsValidUrl(false);
+              }
+            }}
+            scrapperEnabled={scrapperEnabled}
+            onToggleMode={toggleScrapper}
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            promptImages={promptImages}
+            onAddFiles={(files) => void addPromptFiles(files)}
+            onRemoveImage={(index) =>
+              setPromptImages((current) => current.filter((_, i) => i !== index))
+            }
+            onSubmit={() => {
+              if (!isSearching) handleSubmit();
+            }}
+            isSearching={isSearching}
+            hasSearchResults={hasSearched && searchResults.length > 0}
+            onSearchAgain={() => {
+              setSearchResults([]);
+              setHasSearched(false);
+              setIsSearching(false);
+              setUrl('');
+            }}
+            isValidUrl={isValidUrl}
+            extendBrandStyles={extendBrandStyles}
+            onExtendBrandStylesChange={setExtendBrandStyles}
+            brandInstructions={additionalInstructions}
+            onBrandInstructionsChange={setAdditionalInstructions}
+          />
+        </div>
 
-        {/* Full-width oval carousel section */}
-        {scrapperEnabled && showSearchTiles && hasSearched && (
-          <section className={`carousel-section mx-seccion--alt relative w-full overflow-hidden mt-16 mb-16 transition-opacity duration-500 ${
-            isFadingOut ? 'opacity-0' : 'opacity-100'
-          }`}>
-            <div className="absolute inset-0 bg-[var(--mx-fondo-alt)] rounded-[50%] transform scale-x-150 -translate-y-24 opacity-80" />
-            
-            {isSearching ? (
-              // Loading state with animated scrolling skeletons
-              <div className="relative h-[250px] overflow-hidden">
-                {/* Edge fade overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
-                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
-                
-                <div className="carousel-container absolute left-0 flex gap-12 py-4">
-                  {/* Duplicate skeleton tiles for continuous scroll */}
-                  {[...Array(10), ...Array(10)].map((_, index) => (
-                    <div
-                      key={`loading-${index}`}
-                      className="flex-shrink-0 w-[400px] h-[240px] rounded-lg overflow-hidden border-2 border-gray-200/30 bg-white relative"
-                    >
-                      <div className="absolute inset-0 skeleton-shimmer">
-                        <div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 skeleton-gradient" />
-                      </div>
-                      
-                      {/* Fake browser UI - 5x bigger */}
-                      <div className="absolute top-0 left-0 right-0 h-40 bg-gray-100 border-b border-gray-200/50 flex items-center px-6 gap-4">
-                        <div className="flex gap-3">
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" />
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" style={{ animationDelay: '0.1s' }} />
-                          <div className="w-5 h-5 rounded-full bg-gray-300 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        </div>
-                        <div className="flex-1 h-8 bg-gray-200 rounded-md mx-6 animate-pulse" />
-                      </div>
-                      
-                      {/* Content skeleton - positioned just below nav bar */}
-                      <div className="absolute top-44 left-4 right-4">
-                        <div className="h-3 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
-                        <div className="h-3 bg-gray-150 rounded w-1/2 mb-2 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        <div className="h-3 bg-gray-150 rounded w-2/3 animate-pulse" style={{ animationDelay: '0.3s' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : searchResults.length > 0 ? (
-              // Actual results
-              <div className="relative h-[250px] overflow-hidden">
-                {/* Edge fade overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to right, white 0%, white 20%, transparent 100%)'}} />
-                <div className="absolute right-0 top-0 bottom-0 w-[120px] z-20 pointer-events-none" style={{background: 'linear-gradient(to left, white 0%, white 20%, transparent 100%)'}} />
-                
-                <div className="carousel-container absolute left-0 flex gap-12 py-4">
-                  {/* Duplicate results for infinite scroll */}
-                  {[...searchResults, ...searchResults].map((result, index) => (
-                    <div
-                      key={`${result.url}-${index}`}
-                      className="group flex-shrink-0 w-[400px] h-[240px] rounded-lg overflow-hidden border-2 border-gray-200/50 transition-all duration-300 hover:shadow-2xl bg-white relative"
-                      onMouseLeave={() => {
-                        if (showInstructionsForIndex === index) {
-                          setShowInstructionsForIndex(null);
-                          setAdditionalInstructions('');
-                        }
-                      }}
-                    >
-                      {/* Hover overlay with clone buttons or instructions input */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col items-center justify-center p-6">
-                        {showInstructionsForIndex === index ? (
-                          /* Instructions input view - matching main input style exactly */
-                          <div className="w-full max-w-[380px]">
-                            <div className="bg-white rounded-20" style={{
-                              boxShadow: "0px 0px 44px 0px rgba(0, 0, 0, 0.02), 0px 88px 56px -20px rgba(0, 0, 0, 0.03), 0px 56px 56px -20px rgba(0, 0, 0, 0.02), 0px 32px 32px -20px rgba(0, 0, 0, 0.03), 0px 16px 24px -12px rgba(0, 0, 0, 0.03), 0px 0px 0px 1px rgba(0, 0, 0, 0.05)"
-                            }}>
-                              {/* Input area matching main search */}
-                              <div className="p-16 flex gap-12 items-start w-full relative">
-                                {/* Instructions icon */}
-                                <div className="mt-2 flex-shrink-0">
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="opacity-40"
-                                  >
-                                    <path d="M5 5H15M5 10H15M5 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                                  </svg>
-                                </div>
-                                
-                                <textarea
-                                  value={additionalInstructions}
-                                  onChange={(e) => setAdditionalInstructions(e.target.value)}
-                                  placeholder="Describe tus personalizaciones..."
-                                  className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[60px]"
-                                  autoFocus
-                                  onClick={(e) => e.stopPropagation()}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Escape') {
-                                      e.stopPropagation();
-                                      setShowInstructionsForIndex(null);
-                                      setAdditionalInstructions('');
-                                    }
-                                  }}
-                                />
-                              </div>
-                              
-                              {/* Divider */}
-                              <div className="border-t border-black-alpha-5" />
-                              
-                              {/* Buttons area matching main style */}
-                              <div className="p-10 flex justify-between items-center">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowInstructionsForIndex(null);
-                                    setAdditionalInstructions('');
-                                  }}
-                                  className="button relative rounded-10 px-8 py-8 text-label-medium font-medium flex items-center justify-center bg-black-alpha-4 hover:bg-black-alpha-6 text-black-alpha-48 active:scale-[0.995] transition-all"
-                                >
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <path d="M12 5L7 10L12 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </button>
-                                
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (additionalInstructions.trim()) {
-                                      sessionStorage.setItem('additionalInstructions', additionalInstructions);
-                                      handleSubmit(result);
-                                    }
-                                  }}
-                                  disabled={!additionalInstructions.trim()}
-                                  className={`
-                                    button relative rounded-10 px-8 py-8 text-label-medium font-medium
-                                    flex items-center justify-center gap-6
-                                    ${additionalInstructions.trim() 
-                                      ? 'button-primary text-accent-white active:scale-[0.995]' 
-                                      : 'bg-black-alpha-4 text-black-alpha-24 cursor-not-allowed'
-                                    }
-                                  `}
-                                >
-                                  {additionalInstructions.trim() && <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />}
-                                  <span className="px-6 relative">Aplicar y clonar</span>
-                                  <svg 
-                                    width="20" 
-                                    height="20" 
-                                    viewBox="0 0 20 20" 
-                                    fill="none" 
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="relative"
-                                  >
-                                    <path d="M11.6667 4.79163L16.875 9.99994M16.875 9.99994L11.6667 15.2083M16.875 9.99994H3.125" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"/>
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Default buttons view */
-                          <>
-                            <div className="text-white text-center mb-3">
-                              <p className="text-base font-semibold mb-0.5">{result.title}</p>
-                              <p className="text-[11px] opacity-80">Elige cómo clonar este sitio</p>
-                            </div>
-                            
-                            <div className="flex gap-3 justify-center">
-                              {/* Clonar al instante Button - Orange/Heat style */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSubmit(result);
-                                }}
-                                className="bg-[var(--mx-menu)] hover:opacity-95 flex items-center justify-center button relative text-label-medium button-primary group/button rounded-10 p-8 gap-2 text-white active:scale-[0.995]"
-                              >
-                                <div className="button-background absolute inset-0 rounded-10 pointer-events-none" />
-                                <svg 
-                                  width="20" 
-                                  height="20" 
-                                  viewBox="0 0 20 20" 
-                                  fill="none" 
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="relative"
-                                >
-                                  <path d="M11.6667 4.79163L16.875 9.99994M16.875 9.99994L11.6667 15.2083M16.875 9.99994H3.125" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"/>
-                                </svg>
-                                <span className="px-6 relative">Clonar al instante</span>
-                              </button>
-                              
-                              {/* Instructions Button - Gray style */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowInstructionsForIndex(index);
-                                  setAdditionalInstructions('');
-                                }}
-                                className="bg-gray-100 hover:bg-gray-200 flex items-center justify-center button relative text-label-medium rounded-10 p-8 gap-2 text-gray-700 active:scale-[0.995]"
-                              >
-                                <svg 
-                                  width="20" 
-                                  height="20" 
-                                  viewBox="0 0 20 20" 
-                                  fill="none" 
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="opacity-60"
-                                >
-                                  <path d="M5 5H15M5 10H15M5 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                                  <path d="M14 14L16 16L14 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <span className="px-6">Añadir instrucciones</span>
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      
-                      {result.screenshot ? (
-                        <div className="relative w-full h-full">
-                          <img
-                            src={result.screenshot}
-                            alt={result.title}
-                            className="absolute inset-0 w-full h-full object-cover object-top"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-16 h-16 rounded-full bg-gray-200 mx-auto mb-3 flex items-center justify-center">
-                              <svg 
-                                width="32" 
-                                height="32" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="text-gray-400"
-                              >
-                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                                <path d="M3 9H21" stroke="currentColor" strokeWidth="1.5"/>
-                                <circle cx="6" cy="6" r="1" fill="currentColor"/>
-                                <circle cx="9" cy="6" r="1" fill="currentColor"/>
-                                <circle cx="12" cy="6" r="1" fill="currentColor"/>
-                              </svg>
-                            </div>
-                            <p className="text-gray-500 text-sm font-medium">{result.title}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              // No results state
-              <div className="relative h-[250px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="mb-4">
-                    <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-lg">No se encontraron resultados</p>
-                  <p className="text-gray-400 text-sm mt-1">Prueba con otro término de búsqueda</p>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
+        <HomeTemplatesSection
+          scrapperEnabled={scrapperEnabled}
+          isSearching={isSearching}
+          hasSearched={hasSearched}
+          searchResults={searchResults}
+          onUseResult={(result) => startGenerationFromResult(result)}
+          onUsePlaceholder={handleUsePlaceholder}
+        />
       </div>
-
-      <style jsx>{`
-        @keyframes infiniteScroll {
-          from {
-            transform: translateX(0);
-          }
-          to {
-            transform: translateX(-50%);
-          }
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .carousel-container {
-          animation: infiniteScroll 30s linear infinite;
-        }
-
-        .carousel-container:hover {
-          animation-play-state: paused;
-        }
-
-        .skeleton-shimmer {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .skeleton-gradient {
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
     </HeaderProvider>
   );
 }

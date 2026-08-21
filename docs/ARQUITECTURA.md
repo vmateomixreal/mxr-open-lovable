@@ -396,6 +396,8 @@ En la UI se llama **Scrapper**; por debajo usa **Firecrawl**.
 
 Variable: `FIRECRAWL_API_KEY`.
 
+`POST /api/search` pide hasta **8** resultados (`limit: 8`) con markdown + screenshot. En home, la sección **Plantillas** muestra placeholders en modo Chat; en Reference aplica blur (“Esperando búsqueda…” / “Realizando búsqueda…”) y sustituye las cards por los resultados.
+
 El scrape aporta **contexto** al prompt de generación (estructura, estilo, copy), no sustituye al sandbox.
 
 ---

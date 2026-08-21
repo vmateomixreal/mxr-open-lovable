@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Use Firecrawl search to get top 10 results with screenshots
+    // Use Firecrawl search to get top 8 results with screenshots
     const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
       headers: {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         query,
-        limit: 10,
+        limit: 8,
         scrapeOptions: {
           formats: ['markdown', 'screenshot'],
           onlyMainContent: true,

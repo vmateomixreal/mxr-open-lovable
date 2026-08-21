@@ -190,7 +190,7 @@ export default function HomeComposer({
             <textarea
               ref={textareaRef}
               className="home-composer__field home-composer__field--area"
-              placeholder="Pide a la IA que construya una herramienta interna que..."
+              placeholder="Pide a la IA que construya una web app que..."
               value={value}
               rows={2}
               onChange={(e) => {
