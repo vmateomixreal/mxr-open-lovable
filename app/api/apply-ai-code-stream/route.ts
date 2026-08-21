@@ -769,7 +769,7 @@ export async function POST(request: NextRequest) {
         const uploadedList = Array.isArray(uploadedImages)
           ? (uploadedImages as UploadedPromptImage[])
           : [];
-        if ((logoSwap || uploadedList.length > 0) && uploadedList.length > 0 && providerInstance) {
+        if ((logoSwap) && uploadedList.length > 0 && providerInstance) {
           try {
             await sendProgress({
               type: 'info',

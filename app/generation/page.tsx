@@ -7,6 +7,7 @@ import { appConfig } from '@/config/app.config';
 import HeroInput from '@/components/HeroInput';
 import ModelSelect, { getStoredModel } from '@/components/ModelSelect';
 import { takePendingPromptImages } from '@/lib/prompt-images';
+import { isLogoSwapRequest } from '@/lib/prompt-images';
 import SidebarInput from '@/components/app/generation/SidebarInput';
 import Link from 'next/link';
 import { HeaderProvider } from '@/components/shared/header/HeaderContext';
@@ -1676,7 +1677,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     setChatImages([]);
     pendingLogoApplyRef.current = {
       disableMorph: images.length > 0,
-      logoSwap: /(logo|logotipo|cambia|reemplaz|por este|por esta)/i.test(message),
+      logoSwap: isLogoSwapRequest(message),
       uploadedImages: [],
     };
     

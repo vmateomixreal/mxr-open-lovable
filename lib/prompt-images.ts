@@ -1,6 +1,22 @@
 export const MAX_PROMPT_IMAGES = 4;
 export const PROMPT_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 
+/**
+ * True only when the user prompt clearly asks to use an image as a logo / brand mark.
+ * Attaching an image alone is NOT enough — the prompt decides the role of each image.
+ */
+export function isLogoSwapRequest(prompt: string): boolean {
+  const p = prompt.toLowerCase();
+  const mentionsLogo = /\b(logo|logotipo|brand\s*mark|favicon)\b/i.test(p);
+  if (!mentionsLogo) return false;
+
+  return (
+    /(cambia|reemplaz|sustitu|pon|poner|usa|usar|quiero|met[ea]|actualiz)/i.test(p) ||
+    /(por|con)\s+(este|esta|la|el)\s+(logo|imagen|foto)/i.test(p) ||
+    /(logo|logotipo).{0,40}(por|con)\s+(este|esta|la imagen|la foto)/i.test(p)
+  );
+}
+
 let pendingPromptImages: string[] = [];
 
 export function setPendingPromptImages(images: string[]) {

@@ -959,6 +959,7 @@ MORPH FAST APPLY MODE (EDIT-ONLY):
         if (uploadedPromptImages.length) {
           fullPrompt += `\n\n${buildUploadedImagesPromptSection(uploadedPromptImages, {
             logoSwap: isLogoSwapRequest(prompt),
+            userPrompt: prompt,
           })}`;
         }
         if (context) {
@@ -1296,11 +1297,11 @@ ALWAYS write complete code:
 If you're running out of space, generate FEWER files but make them COMPLETE.
 It's better to have 3 complete files than 10 incomplete files.
 
-The user attached ${promptImages.length} reference image(s). ${
+The user attached ${promptImages.length} image(s) as context for THIS prompt. ${
                       uploadedPromptImages.length
-                        ? `REAL files are in the project. For any logo/brand replacement you MUST use an <img> with either src="${uploadedPromptImages[0].publicUrl}" or import ${uploadedPromptImages[0].exportName} from '${uploadedPromptImages[0].importFromComponents}'. NEVER redraw the logo with fonts/CSS/SVG text.`
-                        : 'Match the visual design from the images. NEVER fake logos with fonts.'
-                    }${isLogoSwapRequest(prompt) ? ' This is a LOGO SWAP: replace brand text marks with the uploaded image file.' : ''}`
+                        ? `Real files are available (${uploadedPromptImages.map((image) => image.publicUrl).join(', ')}). Use them only as the user prompt requests — do not assume they are logos.`
+                        : 'Use them only as the user prompt requests.'
+                    }${isLogoSwapRequest(prompt) ? ' The prompt asks for a LOGO/brand-mark change: use a real <img> with the uploaded file, never fake it with fonts.' : ''}`
                     },
                     ...promptImages.map((image) => ({
                       type: 'image' as const,
