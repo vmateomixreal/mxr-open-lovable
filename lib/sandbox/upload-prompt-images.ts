@@ -19,6 +19,8 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
 };
 
 export function parseDataUrl(
@@ -38,7 +40,7 @@ export function parseDataUrl(
   if (!mime.startsWith('image/')) return null;
 
   const base64 = metaAndData.slice(markerIndex + marker.length);
-  const ext = EXT_BY_MIME[mime] || 'jpg';
+  const ext = EXT_BY_MIME[mime] || (mime.includes('svg') ? 'svg' : 'png');
 
   try {
     const buffer = Buffer.from(base64, 'base64');

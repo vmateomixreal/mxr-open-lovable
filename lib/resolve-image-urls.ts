@@ -22,7 +22,11 @@ export function extractUrlsFromText(text: string): string[] {
 
 function looksLikeDirectImageUrl(url: string): boolean {
   try {
-    const pathname = new URL(url).pathname.toLowerCase();
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.toLowerCase();
+    // Wikipedia/Commons file *pages* end in .svg/.png but are HTML, not binaries
+    if (/\/wiki\/(archivo|file|image|media):/i.test(pathname)) return false;
+    if (pathname.includes('/wiki/') && !pathname.includes('special:filepath')) return false;
     return /\.(png|jpe?g|gif|webp|svg|avif|bmp|ico)(\?|$)/i.test(pathname);
   } catch {
     return false;
@@ -186,6 +190,13 @@ export async function downloadImageAsDataUrl(url: string): Promise<string | null
     const buffer = Buffer.from(await response.arrayBuffer());
     if (!buffer.length || buffer.length > MAX_IMAGE_BYTES) {
       console.warn('[resolve-image-urls] Image empty or too large:', buffer.length);
+      return null;
+    }
+
+    // Guard against HTML error pages served with a wrong content-type
+    const head = buffer.slice(0, 64).toString('utf8').toLowerCase();
+    if (head.includes('<!doctype html') || head.includes('<html')) {
+      console.warn('[resolve-image-urls] Downloaded HTML instead of image:', direct);
       return null;
     }
 
