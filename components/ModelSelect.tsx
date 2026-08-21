@@ -51,10 +51,12 @@ export default function ModelSelect({
   value,
   onChange,
   className = '',
+  variant = 'light',
 }: {
   value: string;
   onChange: (model: string) => void;
   className?: string;
+  variant?: 'light' | 'dark';
 }) {
   const [models, setModels] = useState<OpenRouterModel[]>(modelsCache || fallbackModels());
   const [open, setOpen] = useState(false);
@@ -75,8 +77,9 @@ export default function ModelSelect({
   }, []);
 
   const selected = models.find((model) => model.id === value);
-  const selectedLabel = selected?.name || value || 'Seleccionar modelo';
+  const selectedLabel = selected?.name || value || 'Modelo';
   const selectedPrice = selected ? formatPrice(selected) : '';
+  const isDark = variant === 'dark';
 
   const selectModel = (modelId: string) => {
     onChange(modelId);
@@ -85,16 +88,20 @@ export default function ModelSelect({
   };
 
   return (
-    <div className={`relative min-w-[220px] ${className}`} ref={rootRef}>
+    <div className={`relative ${isDark ? 'min-w-0' : 'min-w-[220px]'} ${className}`} ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="mxr-select w-full text-left flex items-center gap-8 normal-case"
+        className={
+          isDark
+            ? 'home-composer__model-trigger'
+            : 'mxr-select w-full text-left flex items-center gap-8 normal-case'
+        }
         aria-label="Modelo de IA"
         aria-expanded={open}
       >
         <span className="flex-1 truncate">{selectedLabel}</span>
-        {selectedPrice && (
+        {!isDark && selectedPrice && (
           <span className="text-[10px] text-[#aaa] whitespace-nowrap">{selectedPrice}</span>
         )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="opacity-50 shrink-0">
@@ -103,7 +110,13 @@ export default function ModelSelect({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-[50] w-[min(340px,80vw)] bg-[#eee] border border-[#ccc] overflow-hidden">
+        <div
+          className={
+            isDark
+              ? 'absolute left-0 bottom-[calc(100%+8px)] z-[50] w-[min(300px,80vw)] rounded-20 overflow-hidden bg-[#2a2a2d] border border-white/10 shadow-[0_18px_44px_rgba(0,0,0,.35)]'
+              : 'absolute right-0 top-[calc(100%+6px)] z-[50] w-[min(340px,80vw)] bg-[#eee] border border-[#ccc] overflow-hidden'
+          }
+        >
           <div className="max-h-[320px] overflow-y-auto py-4">
             {models.map((model) => {
               const price = formatPrice(model);
@@ -112,8 +125,14 @@ export default function ModelSelect({
                   key={model.id}
                   type="button"
                   onClick={() => selectModel(model.id)}
-                  className={`w-full px-10 py-8 text-left flex items-center gap-10 text-[#666] hover:bg-[#4B5CF0] hover:text-white ${
-                    model.id === value ? 'bg-white text-[#444]' : 'bg-transparent'
+                  className={`w-full px-10 py-8 text-left flex items-center gap-10 ${
+                    isDark
+                      ? model.id === value
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/70 hover:bg-white/8 hover:text-white'
+                      : model.id === value
+                        ? 'bg-white text-[#444]'
+                        : 'text-[#666] hover:bg-[#4B5CF0] hover:text-white'
                   }`}
                 >
                   <span className="flex-1 min-w-0">
@@ -126,7 +145,11 @@ export default function ModelSelect({
               );
             })}
           </div>
-          <div className="px-10 py-6 text-[10px] text-[#aaa] border-t border-[#ddd]">
+          <div
+            className={`px-10 py-6 text-[10px] border-t ${
+              isDark ? 'text-white/40 border-white/10' : 'text-[#aaa] border-[#ddd]'
+            }`}
+          >
             USD por 1M tokens · entrada / salida
           </div>
         </div>

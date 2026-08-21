@@ -356,3 +356,314 @@ button {
 .mx-home-input__footer-inner {
   padding-top: 8px;
 }
+
+/* —— Home composer (layout tipo chat, estilos Mixreal) —— */
+.home-composer {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--mx-radio);
+  padding: 18px 18px 14px;
+  box-shadow: 0 18px 44px rgba(28, 28, 30, 0.1);
+  color: var(--mx-tinta);
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-composer__field {
+  width: 100%;
+  background: transparent;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  resize: none;
+  color: var(--mx-tinta);
+  font-family: inherit;
+  font-size: clamp(14px, 1.1vw, 16px);
+  line-height: 1.5;
+  min-height: 28px;
+  max-height: min(42vh, 320px);
+  overflow-y: auto;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.home-composer__field:focus,
+.home-composer__field:focus-visible,
+.home-composer textarea:focus,
+.home-composer textarea:focus-visible,
+.home-composer input:focus,
+.home-composer input:focus-visible {
+  outline: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.home-composer :focus-visible {
+  outline: none !important;
+}
+
+.home-composer__field--area:focus-visible {
+  outline: none !important;
+  border-radius: 0;
+}
+
+.home-composer__field::placeholder {
+  color: var(--mx-tenue);
+}
+
+.home-composer__field--area {
+  min-height: 56px;
+  field-sizing: content;
+}
+
+.home-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.home-composer__left,
+.home-composer__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.home-composer__icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mx-suave);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.home-composer__icon-btn:hover:not(:disabled) {
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-tinta);
+}
+
+.home-composer__icon-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.home-composer__icon-btn.is-listening {
+  color: var(--mx-menu);
+  background: color-mix(in srgb, var(--mx-menu) 12%, transparent);
+}
+
+.home-composer__model {
+  max-width: 180px;
+}
+
+.home-composer__model-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-tinta-media);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--mx-sombra-media);
+}
+
+.home-composer__model-trigger:hover {
+  background: #fff;
+  color: var(--mx-menu);
+}
+
+.home-composer__mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--mx-menu);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.home-composer__mode:hover {
+  color: color-mix(in srgb, var(--mx-menu) 80%, #000);
+}
+
+.home-composer__mode-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  min-width: 180px;
+  padding: 8px;
+  border-radius: var(--mx-radio-medio);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 18px 44px rgba(28, 28, 30, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 40;
+}
+
+.home-composer__mode-menu button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--mx-tinta);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.home-composer__mode-menu button span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mx-tenue);
+}
+
+.home-composer__mode-menu button:hover,
+.home-composer__mode-menu button.is-active {
+  background: color-mix(in srgb, var(--mx-menu) 8%, transparent);
+  color: var(--mx-menu);
+}
+
+.home-composer__send {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-tenue);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  box-shadow: var(--mx-sombra-media);
+}
+
+.home-composer__send.is-ready {
+  background: var(--mx-menu);
+  color: #fff;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mx-menu) 35%, transparent);
+}
+
+.home-composer__send.is-ready:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--mx-menu) 88%, #000);
+}
+
+.home-composer__send:disabled {
+  cursor: not-allowed;
+}
+
+.home-composer__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: mxr-spin 0.8s linear infinite;
+}
+
+.home-composer__select-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.home-composer__select-text {
+  margin: 0;
+  color: var(--mx-suave);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.home-composer__ghost-btn {
+  border: 0;
+  border-radius: 999px;
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-tinta);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.home-composer__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-composer__chip {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  background: var(--mx-tarjeta-alt);
+  color: var(--mx-suave);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.home-composer__chip.is-on {
+  background: color-mix(in srgb, var(--mx-menu) 14%, transparent);
+  color: var(--mx-menu);
+}
+
+.home-composer__brand-input {
+  width: 100%;
+  border: 0;
+  border-radius: var(--mx-radio-chico);
+  background: var(--mx-fondo-alt);
+  color: var(--mx-tinta);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  resize: none;
+  outline: none;
+}
+
+.home-composer__brand-input::placeholder {
+  color: var(--mx-tenue);
+}
+
+.home-composer .relative.w-56 {
+  border-color: var(--mx-linea-suave);
+}
+

@@ -1,20 +1,15 @@
 "use client";
 
+import { filesToPromptImages, MAX_PROMPT_IMAGES, setPendingPromptImages } from "@/lib/prompt-images";
+import { HeaderProvider } from "@/components/shared/header/HeaderContext";
+import { getStoredModel } from "@/components/ModelSelect";
+import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
+import HomeComposer from "@/components/HomeComposer";
+import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { appConfig } from '@/config/app.config';
 import { isLikelyUrl } from '@/lib/url';
-import { toast } from "sonner";
-import { filesToPromptImages, MAX_PROMPT_IMAGES, setPendingPromptImages } from "@/lib/prompt-images";
-import { PromptImageAttachButton, PromptImageThumbnails } from "@/components/PromptImageAttachments";
-
-import { HeaderProvider } from "@/components/shared/header/HeaderContext";
-
-// Import hero section components
-import HeroInputSubmitButton from "@/components/app/(home)/sections/hero-input/Button/Button";
-import ModelSelect, { getStoredModel } from "@/components/ModelSelect";
-import { ModelSelectorGate } from "@/components/ModelSelectorGate";
-import HomeHeroTitle from "@/components/app/(home)/sections/hero/Title/Title";
 
 interface SearchResult {
   url: string;
@@ -37,7 +32,7 @@ export default function HomePage() {
   const [showInstructionsForIndex, setShowInstructionsForIndex] = useState<number | null>(null);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   const [extendBrandStyles, setExtendBrandStyles] = useState<boolean>(false);
-  const [scrapperEnabled, setScrapperEnabled] = useState<boolean>(true);
+  const [scrapperEnabled, setScrapperEnabled] = useState<boolean>(false);
   const [promptImages, setPromptImages] = useState<string[]>([]);
   const router = useRouter();
 
@@ -255,350 +250,55 @@ export default function HomePage() {
                 ? 'Clona o reimagina cualquier web con calidad de producto, en segundos.'
                 : 'Describe tu idea y genera una app React lista para iterar, en segundos.'}
             </p>
-            <div className="flex justify-center mt-[clamp(20px,2.4vw,32px)]">
-              <button
-                type="button"
-                className={`mx-btn ${scrapperEnabled ? 'mx-btn--claro' : 'mx-btn--oscuro'} mx-btn--compacto`}
-                onClick={toggleScrapper}
-              >
-                {scrapperEnabled ? 'Scrapper activado' : 'Modo prompt'}
-              </button>
-            </div>
           </div>
         </section>
 
-          {/* Mini Playground Input */}
-          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(48px,6vw,96px)] -mt-4">
-            <div className="mx-home-input mx-entra" style={{ ["--mx-orden" as string]: 1 }}>
-
-                <div className={`mx-home-input__body ${scrapperEnabled ? 'items-center' : 'items-start'}`}>
-                  {/* Show different UI when search results are displayed */}
-                  {hasSearched && searchResults.length > 0 && !isFadingOut ? (
-                    <>
-                      {/* Selection mode icon */}
-                      <svg 
-                        width="20" 
-                        height="20" 
-                        viewBox="0 0 20 20" 
-                        fill="none" 
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="opacity-40 flex-shrink-0"
-                      >
-                        <rect x="2" y="4" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="11" y="4" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="2" y="11" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                        <rect x="11" y="11" width="7" height="5" rx="1" stroke="currentColor" strokeWidth="1.5"/>
-                      </svg>
-                      
-                      {/* Selection message */}
-                      <div className="flex-1 text-body-input text-accent-black">
-                        Elige qué sitio clonar entre los resultados de abajo
-                      </div>
-                      
-                      {/* Search again button */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setIsFadingOut(true);
-                          setTimeout(() => {
-                            setSearchResults([]);
-                            setHasSearched(false);
-                            setShowSearchTiles(false);
-                            setIsFadingOut(false);
-                            setUrl('');
-                          }, 500);
-                        }}
-                        className="button relative rounded-10 px-12 py-8 text-label-medium font-medium flex items-center justify-center gap-6 bg-gray-100 hover:bg-gray-200 text-gray-700 active:scale-[0.995] transition-all"
-                      >
-                        <svg 
-                          width="16" 
-                          height="16" 
-                          viewBox="0 0 16 16" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-60"
-                        >
-                          <path d="M14 14L10 10M11 6.5C11 9 9 11 6.5 11C4 11 2 9 2 6.5C2 4 4 2 6.5 2C9 2 11 4 11 6.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                        <span>Buscar de nuevo</span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {scrapperEnabled ? (
-                        isURL(url) ? (
-                        // Scrape icon for URLs
-                        <svg 
-                          width="20" 
-                          height="20" 
-                          viewBox="0 0 20 20" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-40 flex-shrink-0"
-                        >
-                          <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M7 10L9 12L13 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        ) : (
-                        // Search icon for search terms
-                        <svg 
-                          width="20" 
-                          height="20" 
-                          viewBox="0 0 20 20" 
-                          fill="none" 
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-40 flex-shrink-0"
-                        >
-                          <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M12.5 12.5L16.5 16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                        )
-                      ) : (
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="opacity-40 flex-shrink-0 mt-2"
-                        >
-                          <path d="M4 16L5.5 11.5L12.5 4.5C13.3284 3.67157 14.6716 3.67157 15.5 4.5C16.3284 5.32843 16.3284 6.67157 15.5 7.5L8.5 14.5L4 16Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M11.5 5.5L14.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      )}
-                      {scrapperEnabled ? (
-                      <input
-                        className="flex-1 bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent"
-                        placeholder="Introduce una URL o un término de búsqueda..."
-                        type="text"
-                        value={url}
-                        disabled={isSearching}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setUrl(value);
-                          setIsValidUrl(validateUrl(value));
-                          // Reset search state when input changes
-                          if (value.trim() === "") {
-                            setShowSearchTiles(false);
-                            setHasSearched(false);
-                            setSearchResults([]);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !isSearching) {
-                            e.preventDefault();
-                            handleSubmit();
-                          }
-                        }}
-                        onFocus={() => {
-                          if (url.trim() && !isURL(url) && searchResults.length > 0) {
-                            setShowSearchTiles(true);
-                          }
-                        }}
-                      />
-                      ) : (
-                      <>
-                      <div className="flex-1 min-w-0 flex flex-col gap-10">
-                        <textarea
-                          className="w-full bg-transparent text-body-input text-accent-black placeholder:text-black-alpha-48 focus:outline-none focus:ring-0 focus:border-transparent resize-none min-h-[48px] leading-6"
-                          placeholder="Describe lo que quieres crear, o adjunta una imagen de referencia..."
-                          value={url}
-                          rows={2}
-                          onChange={(e) => {
-                            setUrl(e.target.value);
-                            setIsValidUrl(false);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSubmit();
-                            }
-                          }}
-                          onPaste={(e) => {
-                            const files = Array.from(e.clipboardData.files).filter((file) => file.type.startsWith('image/'));
-                            if (files.length) {
-                              e.preventDefault();
-                              void addPromptFiles(files);
-                            }
-                          }}
-                          onDrop={(e) => {
-                            const files = Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/'));
-                            if (files.length) {
-                              e.preventDefault();
-                              void addPromptFiles(files);
-                            }
-                          }}
-                          onDragOver={(e) => e.preventDefault()}
-                        />
-                        <PromptImageThumbnails
-                          images={promptImages}
-                          onRemove={(index) => setPromptImages((current) => current.filter((_, i) => i !== index))}
-                        />
-                      </div>
-                      <div className="self-end">
-                        <PromptImageAttachButton
-                          remaining={MAX_PROMPT_IMAGES - promptImages.length}
-                          onFiles={(files) => void addPromptFiles(files)}
-                        />
-                      </div>
-                      </>
-                      )}
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!isSearching) {
-                            handleSubmit();
-                          }
-                        }}
-                        className={`${isSearching ? 'pointer-events-none' : ''} ${!scrapperEnabled ? 'self-end' : ''}`}
-                      >
-                        <HeroInputSubmitButton 
-                          dirty={url.length > 0 || (!scrapperEnabled && promptImages.length > 0)} 
-                          buttonText={
-                            !scrapperEnabled
-                              ? 'Generar'
-                              : isURL(url)
-                                ? 'Extraer sitio'
-                                : 'Buscar'
-                          } 
-                          disabled={isSearching}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="px-[28px] pb-[16px]">
-                  <div className="border-t border-gray-100">
-                    <div
-                      className="py-8 grid grid-cols-2 items-center gap-12 group cursor-pointer"
-                      onClick={toggleScrapper}
-                    >
-                      <div className="flex select-none">
-                        <div className="min-w-0">
-                          <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black">
-                            Usar Scrapper
-                          </div>
-                          <div className="text-[11px] text-black-alpha-48 mt-2">
-                            {scrapperEnabled
-                              ? 'Buscar y clonar sitios web'
-                              : 'Escribe un prompt y genera desde cero'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          className="transition-all relative rounded-full group bg-black-alpha-10"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleScrapper();
-                          }}
-                          aria-pressed={scrapperEnabled}
-                          aria-label={scrapperEnabled ? 'Desactivar Scrapper' : 'Activar Scrapper'}
-                          style={{
-                            width: '50px',
-                            height: '20px',
-                            boxShadow: 'rgba(0, 0, 0, 0.02) 0px 6px 12px 0px inset, rgba(0, 0, 0, 0.02) 0px 0.75px 0.75px 0px inset, rgba(0, 0, 0, 0.04) 0px 0.25px 0.25px 0px inset'
-                          }}
-                        >
-                          <div
-                            className={`overlay transition-opacity ${scrapperEnabled ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ backgroundColor: 'var(--mx-menu)' }}
-                          />
-                          <div
-                            className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
-                            style={{
-                              width: '28px',
-                              height: '16px',
-                              boxShadow: 'rgba(0, 0, 0, 0.06) 0px 6px 12px -3px, rgba(0, 0, 0, 0.06) 0px 3px 6px -1px, rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.08) 0px 0.5px 0.5px 0px',
-                              transform: scrapperEnabled ? 'translateX(16px)' : 'none'
-                            }}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                    <ModelSelectorGate>
-                    <div className="py-8 grid grid-cols-2 items-center gap-12">
-                      <div className="text-xs font-medium text-black-alpha-72">
-                        Modelo
-                      </div>
-                      <div className="flex justify-end">
-                        <ModelSelect value={selectedModel} onChange={setSelectedModel} />
-                      </div>
-                    </div>
-                    </ModelSelectorGate>
-                  </div>
-                </div>
-
-                {/* Options Section - brand extension when cloning a URL */}
-                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  scrapperEnabled && isValidUrl ? (extendBrandStyles ? 'max-h-[400px]' : 'max-h-[80px]') + ' opacity-100' : 'max-h-0 opacity-0'
-                }`}>
-                  <div className="px-[28px] pt-0 pb-[28px]">
-                    <div className="bg-white">
-                      {scrapperEnabled && (
-                      <>
-                      <div className={`transition-all duration-300 transform ${
-                        isValidUrl ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
-                      }`} style={{ transitionDelay: '50ms' }}>
-                        <div className="py-8 grid grid-cols-2 items-center gap-12 group cursor-pointer" onClick={() => setExtendBrandStyles(!extendBrandStyles)}>
-                          <div className="flex select-none">
-                            <div className="flex lg-max:flex-col whitespace-nowrap flex-wrap min-w-0 gap-8 lg:justify-between flex-1">
-                              <div className="text-xs font-medium text-black-alpha-72 transition-all group-hover:text-accent-black relative">
-                                Extender estilos de marca
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              className="transition-all relative rounded-full group bg-black-alpha-10"
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExtendBrandStyles(!extendBrandStyles);
-                              }}
-                              style={{
-                                width: '50px',
-                                height: '20px',
-                                boxShadow: 'rgba(0, 0, 0, 0.02) 0px 6px 12px 0px inset, rgba(0, 0, 0, 0.02) 0px 0.75px 0.75px 0px inset, rgba(0, 0, 0, 0.04) 0px 0.25px 0.25px 0px inset'
-                              }}
-                            >
-                              <div
-                                className={`overlay transition-opacity ${extendBrandStyles ? 'opacity-100' : 'opacity-0'}`}
-                                style={{ backgroundColor: '#4B5CF0' }}
-                              />
-                              <div
-                                className="top-[2px] left-[2px] transition-all absolute rounded-full bg-accent-white"
-                                style={{
-                                  width: '28px',
-                                  height: '16px',
-                                  boxShadow: 'rgba(0, 0, 0, 0.06) 0px 6px 12px -3px, rgba(0, 0, 0, 0.06) 0px 3px 6px -1px, rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.08) 0px 0.5px 0.5px 0px',
-                                  transform: extendBrandStyles ? 'translateX(16px)' : 'none'
-                                }}
-                              />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {extendBrandStyles && (
-                        <div className="pb-10 transition-all duration-300 opacity-100">
-                          <textarea
-                            value={additionalInstructions}
-                            onChange={(e) => setAdditionalInstructions(e.target.value)}
-                            placeholder="Describe la nueva funcionalidad que quieres crear con los estilos de esta marca..."
-                            className="w-full px-4 py-10 text-xs font-medium text-gray-700 bg-gray-50 rounded border border-gray-200 focus:border-[var(--mx-menu)] focus:outline-none focus:ring-1 focus:ring-[var(--mx-menu)] placeholder:text-gray-400 min-h-[80px] resize-none"
-                          />
-                        </div>
-                      )}
-                      </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-            </div>
+          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(48px,6vw,96px)] -mt-2">
+            <HomeComposer
+              value={url}
+              onChange={(value) => {
+                setUrl(value);
+                if (scrapperEnabled) {
+                  setIsValidUrl(validateUrl(value));
+                  if (value.trim() === '') {
+                    setShowSearchTiles(false);
+                    setHasSearched(false);
+                    setSearchResults([]);
+                  }
+                } else {
+                  setIsValidUrl(false);
+                }
+              }}
+              scrapperEnabled={scrapperEnabled}
+              onToggleMode={toggleScrapper}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+              promptImages={promptImages}
+              onAddFiles={(files) => void addPromptFiles(files)}
+              onRemoveImage={(index) =>
+                setPromptImages((current) => current.filter((_, i) => i !== index))
+              }
+              onSubmit={() => {
+                if (!isSearching) handleSubmit();
+              }}
+              isSearching={isSearching}
+              hasSearchResults={hasSearched && searchResults.length > 0 && !isFadingOut}
+              onSearchAgain={() => {
+                setIsFadingOut(true);
+                setTimeout(() => {
+                  setSearchResults([]);
+                  setHasSearched(false);
+                  setShowSearchTiles(false);
+                  setIsFadingOut(false);
+                  setUrl('');
+                }, 500);
+              }}
+              isValidUrl={isValidUrl}
+              extendBrandStyles={extendBrandStyles}
+              onExtendBrandStylesChange={setExtendBrandStyles}
+              brandInstructions={additionalInstructions}
+              onBrandInstructionsChange={setAdditionalInstructions}
+            />
           </div>
 
         {/* Full-width oval carousel section */}
