@@ -17,14 +17,15 @@ Documentación técnica completa del creador de apps con IA (fork/brand de Open 
 9. [Vista previa (preview)](#9-vista-previa-preview)
 10. [Scrapper (Firecrawl)](#10-scrapper-firecrawl)
 11. [Sandboxes (E2B y Vercel)](#11-sandboxes-e2b-y-vercel)
-12. [Servicios externos y variables de entorno](#12-servicios-externos-y-variables-de-entorno)
-13. [Páginas de la app](#13-páginas-de-la-app)
-14. [API routes](#14-api-routes)
-15. [Módulos `lib/` y tipos](#15-módulos-lib-y-tipos)
-16. [Estado global del servidor](#16-estado-global-del-servidor)
-17. [Design system y UI](#17-design-system-y-ui)
-18. [Limitaciones conocidas](#18-limitaciones-conocidas)
-19. [Mapa rápido de archivos](#19-mapa-rápido-de-archivos)
+12. [Límites, tiempos y caducidades](#12-límites-tiempos-y-caducidades)
+13. [Servicios externos y variables de entorno](#13-servicios-externos-y-variables-de-entorno)
+14. [Páginas de la app](#14-páginas-de-la-app)
+15. [API routes](#15-api-routes)
+16. [Módulos `lib/` y tipos](#16-módulos-lib-y-tipos)
+17. [Estado global del servidor](#17-estado-global-del-servidor)
+18. [Design system y UI](#18-design-system-y-ui)
+19. [Limitaciones conocidas](#19-limitaciones-conocidas)
+20. [Mapa rápido de archivos](#20-mapa-rápido-de-archivos)
 
 ---
 
@@ -422,7 +423,33 @@ Creación actual: `POST /api/create-ai-sandbox-v2`.
 - Auth: `lib/sandbox/vercel-auth.ts`  
   - OIDC: `VERCEL_OIDC_TOKEN` (vía `vercel link` + `vercel env pull`)  
   - o PAT: `VERCEL_TOKEN` + `VERCEL_TEAM_ID` + `VERCEL_PROJECT_ID`  
-- Timeout típico: 30 min (`appConfig.vercelSandbox`)
+- Timeout de sesión: **30 min** (`appConfig.vercelSandbox.timeoutMinutes`)
+
+### Duración del sandbox activo
+
+Fuente de verdad: `config/app.config.ts`.
+
+| Provider | Tiempo de vida configurado | Cómo se aplica |
+|----------|----------------------------|----------------|
+| **E2B** | **30 minutos** (`e2b.timeoutMinutes` → `timeoutMs`) | Al crear el sandbox (`timeoutMs`) y, si existe, `sandbox.setTimeout(...)` |
+| **Vercel** | **30 minutos** (`vercelSandbox.timeoutMinutes` → `timeoutMs`) | Parámetro `timeout` al crear el sandbox |
+
+Pasado ese tiempo el proveedor **apaga** el entorno remoto: la URL de preview deja de responder y hay que crear un sandbox nuevo (el código en disco del sandbox se pierde con él).
+
+Otros tiempos relacionados con el sandbox:
+
+| Concepto | Valor | Dónde |
+|----------|-------|--------|
+| Cleanup de sandboxes “huérfanos” en el manager | **1 hora** sin acceso (`maxAge` por defecto = `3600000` ms) | `sandboxManager.cleanup()` en `lib/sandbox/sandbox-manager.ts` |
+| Espera arranque Vite (E2B) | **10 s** | `e2b.viteStartupDelay` |
+| Espera arranque dev server (Vercel) | **7 s** | `vercelSandbox.devServerStartupDelay` |
+| Espera preview ready (Vercel, poll) | hasta **40 s** | `waitForPreviewReady` en `vercel-provider.ts` |
+| Delay rebuild CSS (Vercel) | **2 s** | `vercelSandbox.cssRebuildDelay` |
+| Cooldown entre reinicios de Vite | **5 s** | `RESTART_COOLDOWN_MS` en `app/api/restart-vite/route.ts` |
+| Timeout instalación npm | **60 s** | `packages.installTimeout` |
+| Auto-restart Vite tras instalar paquetes | **sí** (por defecto) | `packages.autoRestartVite` |
+
+> Nota: un comentario antiguo en `generate-ai-code-stream` menciona “10 minutes”; la config efectiva actual es **30 minutos**. Si se cambia `timeoutMinutes` en `app.config.ts`, ese es el valor real.
 
 ### Ciclo de vida
 
@@ -441,7 +468,80 @@ Interfaz abstracta: `lib/sandbox/types.ts` (`SandboxProvider`: `writeFile`, `run
 
 ---
 
-## 12. Servicios externos y variables de entorno
+## 12. Límites, tiempos y caducidades
+
+Resumen operativo de cuánto dura cada cosa, qué se recorta y qué caduca. Casi todo se ajusta en `config/app.config.ts` salvo lo indicado.
+
+### Sandbox y preview
+
+| Qué | Duración / límite | Efecto al vencer |
+|-----|-------------------|------------------|
+| Sesión E2B / Vercel | **30 min** | Preview muerto; hay que recrear sandbox |
+| Entradas viejas en `sandboxManager` | **1 h** sin `lastAccessed` (si se llama `cleanup`) | Se termina ese sandbox del registro |
+| Refresh iframe tras apply | **2 s** (sin packages) / **5 s** (con install) | Solo delay de UX, no caducidad |
+| Puerto Vite E2B | **5173** | — |
+| Runtime Vercel por defecto | `node22` | — |
+
+### Autenticación (caducidades aparte del sandbox)
+
+| Credencial | Caducidad | Qué hacer |
+|------------|-----------|-----------|
+| `VERCEL_OIDC_TOKEN` | JWT con `exp` (suele ser corto; horas/día según pull) | `npx vercel env pull .env.local --yes` y reiniciar `pnpm dev`. Detectado en `lib/sandbox/vercel-auth.ts` |
+| `VERCEL_TOKEN` (PAT) | Según caducidad del token en el dashboard de Vercel | Regenerar PAT |
+| `E2B_API_KEY` / `OPEN_ROUTER_API_KEY` / etc. | Según el proveedor | Rotar en el panel del servicio |
+
+Un OIDC caducado suele verse como **403** al crear sandbox Vercel.
+
+### IA y conversación
+
+| Qué | Límite | Dónde |
+|-----|--------|-------|
+| Tokens máx. generación (config) | **8000** | `ai.maxTokens` |
+| Tokens en stream (código actual) | **8192** | `generate-ai-code-stream` |
+| Recuperación por truncado | **4000** tokens; **desactivada** por defecto | `truncationRecoveryMaxTokens`, `enableTruncationRecovery: false` |
+| Temperature por defecto | **0.7** | `ai.defaultTemperature` |
+| Mensajes guardados en `conversationState` | se recortan a los **últimos 15** (si hay > 20) | `generate-ai-code-stream` |
+| Edits en conversación | se recortan a los **últimos 8** (si hay > 10) | idem |
+| Chat en UI (memoria cliente, config) | hasta **100** mensajes | `ui.maxChatMessages` |
+| Contexto reciente de chat (config) | **20** mensajes | `ui.maxRecentMessagesContext` |
+| Toasts | **3 s** | `ui.toastDuration` |
+
+### Imágenes
+
+| Qué | Límite | Dónde |
+|-----|--------|-------|
+| Adjuntos / URLs por prompt | **máx. 4** | `MAX_PROMPT_IMAGES`, `collectPromptImageDataUrls` |
+| Tamaño descarga URL | **~4,5 MB** | `MAX_IMAGE_BYTES` en `resolve-image-urls.ts` |
+| Compresión adjuntos | JPEG calidad **0.85** | `compressImageFile` |
+| Body server actions Next | **8 MB** | `next.config.ts` → `serverActions.bodySizeLimit` |
+| Accept UI adjuntos | jpeg, png, webp, gif | `PROMPT_IMAGE_ACCEPT` (SVG llega vía URL resuelta / data URL) |
+
+### Archivos y APIs
+
+| Qué | Límite | Dónde |
+|-----|--------|-------|
+| Tamaño máx. al leer un archivo | **1 MB** | `files.maxFileSize` |
+| Timeout request API genérico | **30 s** | `api.requestTimeout` |
+| Reintentos API | **3** × delay **1 s** | `api.maxRetries` / `retryDelay` |
+| Timeout scrape Firecrawl (típico) | **30 s** | rutas `scrape-*` / `search` |
+| Timeout install packages | **60 s** | `packages.installTimeout` |
+| Flag npm | `--legacy-peer-deps` | `packages.useLegacyPeerDeps` |
+| Patrones excluidos al listar | `node_modules`, `.git`, `dist`, logs… | `files.excludePatterns` |
+
+### Persistencia (qué NO dura)
+
+| Dato | ¿Persiste al reiniciar `pnpm dev`? | ¿Persiste al matar el sandbox? |
+|------|-------------------------------------|--------------------------------|
+| Archivos de la app generada | No (solo viven en el sandbox) | **No** |
+| `global.sandboxState` / conversación | **No** (memoria del proceso) | Irrelevante si el proceso sigue, pero el preview ya no |
+| `sessionStorage` (prompt pendiente) | Sí, en el navegador hasta cerrar pestaña/origen | Sí |
+| Imágenes en `public/uploads/` del sandbox | No fuera del sandbox | **No** |
+
+Para conservar trabajo: usar **export zip** (`/api/create-zip`) antes de que expire la sesión de 30 min.
+
+---
+
+## 13. Servicios externos y variables de entorno
 
 | Servicio | Para qué | Variables |
 |----------|----------|-----------|
@@ -466,7 +566,7 @@ Lista dinámica: `GET /api/openrouter-models` + `lib/openrouter-models.ts`.
 
 ---
 
-## 13. Páginas de la app
+## 14. Páginas de la app
 
 | Ruta | Archivo | Rol |
 |------|---------|-----|
@@ -478,7 +578,7 @@ Lista dinámica: `GET /api/openrouter-models` + `lib/openrouter-models.ts`.
 
 ---
 
-## 14. API routes
+## 15. API routes
 
 ### Generación y apply
 
@@ -530,7 +630,7 @@ Lista dinámica: `GET /api/openrouter-models` + `lib/openrouter-models.ts`.
 
 ---
 
-## 15. Módulos `lib/` y tipos
+## 16. Módulos `lib/` y tipos
 
 | Módulo | Rol |
 |--------|-----|
@@ -559,7 +659,7 @@ Lista dinámica: `GET /api/openrouter-models` + `lib/openrouter-models.ts`.
 
 ---
 
-## 16. Estado global del servidor
+## 17. Estado global del servidor
 
 Vive en el proceso Node de Next.js (`global.*`). **No es multi-instancia ni serverless-safe** de forma nativa: un sandbox “activo” por proceso.
 
@@ -576,7 +676,7 @@ El cliente mantiene espejo parcial en React (chat UI, `sandboxData`, progreso de
 
 ---
 
-## 17. Design system y UI
+## 18. Design system y UI
 
 - Tema Mixreal: `styles/mixreal-theme.css`, `styles/design-system/colors.css`, `styles/main.css`, `colors.json`.  
 - UI de producto en **castellano** (landing, generation, toasts, toggle Scrapper).  
@@ -585,18 +685,19 @@ El cliente mantiene espejo parcial en React (chat UI, `sandboxData`, progreso de
 
 ---
 
-## 18. Limitaciones conocidas
+## 19. Limitaciones conocidas
 
-1. **Estado en memoria:** reiniciar `pnpm dev` o redeploy pierde sandbox/caché/conversación del proceso.  
-2. **Dualidad v1/v2:** el path productivo usa `*-v2` y `apply-ai-code-stream`; existen rutas legacy ligadas a `global.activeSandbox`.  
-3. **Morph ≠ imágenes:** con logos/adjuntos/URLs de imagen Morph se apaga a propósito.  
-4. **URLs de Wikipedia:** hay que resolver la página `Archivo:` al SVG/PNG real; no sirve pegar solo el HTML de la ficha.  
-5. **OIDC de Vercel caduca:** si `SANDBOX_PROVIDER=vercel` falla con 403, renovar con `vercel env pull` o usar PAT / E2B.  
-6. **`/builder` y `app/landing.tsx`:** residuales respecto a `/` + `/generation`.
+1. **Sandbox ~30 min:** tras `timeoutMinutes` el entorno remoto muere; hay que recrearlo (ver [§12](#12-límites-tiempos-y-caducidades)).  
+2. **Estado en memoria:** reiniciar `pnpm dev` o redeploy pierde sandbox/caché/conversación del proceso.  
+3. **Dualidad v1/v2:** el path productivo usa `*-v2` y `apply-ai-code-stream`; existen rutas legacy ligadas a `global.activeSandbox`.  
+4. **Morph ≠ imágenes:** con logos/adjuntos/URLs de imagen Morph se apaga a propósito.  
+5. **URLs de Wikipedia:** hay que resolver la página `Archivo:` al SVG/PNG real; no sirve pegar solo el HTML de la ficha.  
+6. **OIDC de Vercel caduca:** si `SANDBOX_PROVIDER=vercel` falla con 403, renovar con `vercel env pull` o usar PAT / E2B.  
+7. **`/builder` y `app/landing.tsx`:** residuales respecto a `/` + `/generation`.
 
 ---
 
-## 19. Mapa rápido de archivos
+## 20. Mapa rápido de archivos
 
 ```
 mxr-open-lovable/
@@ -633,4 +734,4 @@ mxr-open-lovable/
 
 ---
 
-*Última actualización: alineada con el flujo productivo `create-ai-sandbox-v2` → `generate-ai-code-stream` → `apply-ai-code-stream`, resolución de URLs de imagen y uploads a `public/uploads/`.*
+*Última actualización: incluye tiempos de vida del sandbox (30 min), cleanup del manager (1 h), límites de IA/chat/imágenes, delays de Vite/preview y caducidad OIDC; flujo productivo `create-ai-sandbox-v2` → `generate-ai-code-stream` → `apply-ai-code-stream`.*

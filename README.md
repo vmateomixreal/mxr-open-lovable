@@ -4,7 +4,7 @@ Creador de apps React con IA: describes lo que quieres (o scrapea una web), se g
 
 ## Documentación completa
 
-La guía técnica de **todos los procesos** (generación, apply, Morph, sandboxes, imágenes, preview, APIs, env vars) está en:
+La guía técnica de **todos los procesos** (generación, apply, Morph, sandboxes, tiempos de vida, imágenes, preview, APIs, env vars) está en:
 
 **[docs/ARQUITECTURA.md](./docs/ARQUITECTURA.md)**
 
