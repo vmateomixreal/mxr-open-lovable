@@ -8,13 +8,19 @@ export const PROMPT_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 export function isLogoSwapRequest(prompt: string): boolean {
   const p = prompt.toLowerCase();
   const mentionsLogo = /\b(logo|logotipo|brand\s*mark|favicon)\b/i.test(p);
-  if (!mentionsLogo) return false;
+  const hasImageUrl =
+    /https?:\/\/[^\s]+/i.test(p) &&
+    /(wiki\/(archivo|file|image):|\.(png|jpe?g|gif|webp|svg)(\?|$)|wikimedia\.org\/|upload\.wikimedia)/i.test(p);
+  const swapIntent =
+    /(cambia|reemplaz|sustitu|pon|poner|usa|usar|quiero|met[ea]|actualiz|cambialo|cámbialo)/i.test(p) ||
+    /(por|con)\s+(este|esta|la|el)\s+(logo|imagen|foto)/i.test(p);
 
-  return (
-    /(cambia|reemplaz|sustitu|pon|poner|usa|usar|quiero|met[ea]|actualiz)/i.test(p) ||
-    /(por|con)\s+(este|esta|la|el)\s+(logo|imagen|foto)/i.test(p) ||
-    /(logo|logotipo).{0,40}(por|con)\s+(este|esta|la imagen|la foto)/i.test(p)
-  );
+  if (mentionsLogo && swapIntent) return true;
+
+  // "cámbialo por esta imagen: <url>" while editing an existing logo
+  if (hasImageUrl && swapIntent && /(imagen|foto|logo|logotipo)/i.test(p)) return true;
+
+  return false;
 }
 
 let pendingPromptImages: string[] = [];

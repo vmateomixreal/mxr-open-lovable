@@ -13,6 +13,7 @@ import {
   buildUploadedImagesPromptSection,
   isLogoSwapRequest,
 } from '@/lib/sandbox/upload-prompt-images';
+import { collectPromptImageDataUrls } from '@/lib/resolve-image-urls';
 
 // Force dynamic route to enable streaming
 export const dynamic = 'force-dynamic';
@@ -73,11 +74,21 @@ export async function POST(request: NextRequest) {
     console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
     console.log('[generate-ai-code-stream] - images:', Array.isArray(images) ? images.length : 0);
 
-    const promptImages = Array.isArray(images)
+    const attachedImages = Array.isArray(images)
       ? images.filter((image: unknown): image is string => (
           typeof image === 'string' && image.startsWith('data:image/')
         )).slice(0, 4)
       : [];
+
+    // Also pull image URLs from the prompt text (Wikipedia File pages, direct .svg/.png, etc.)
+    const collected = await collectPromptImageDataUrls(prompt || '', attachedImages);
+    const promptImages = collected.dataUrls;
+    if (collected.resolvedFromUrls.length) {
+      console.log(
+        '[generate-ai-code-stream] Resolved image URLs from prompt:',
+        collected.resolvedFromUrls.join(', ')
+      );
+    }
 
     // Persist uploads in the sandbox so edits can use real <img src="/uploads/..."> paths.
     // Morph mini-edits cannot embed large base64 images, so this is required for logo swaps.

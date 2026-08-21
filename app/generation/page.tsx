@@ -1676,7 +1676,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     setAiChatInput('');
     setChatImages([]);
     pendingLogoApplyRef.current = {
-      disableMorph: images.length > 0,
+      disableMorph:
+        images.length > 0 ||
+        /https?:\/\/[^\s]+/i.test(message),
       logoSwap: isLogoSwapRequest(message),
       uploadedImages: [],
     };
