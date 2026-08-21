@@ -68,11 +68,8 @@ export const encryptText = (
 export default function HomeHeroTitle() {
   return (
     <header className="mx-cabecera" style={{ marginBottom: 0 }}>
-      <p className="mx-etiqueta mx-entra" style={{ ["--mx-orden" as string]: 0 }}>
-        Producto
-      </p>
-      <h1 className="mx-h1 mx-entra" style={{ ["--mx-orden" as string]: 0 }}>
-        Crea con <span style={{ color: "var(--mx-menu)" }}>IA</span>
+      <h1 className="mx-h2 mx-entra text-center" style={{ ["--mx-orden" as string]: 0 }}>
+        ¿Qué quieres crear <span style={{ color: "var(--mx-menu)" }}>hoy</span>?
       </h1>
     </header>
   );

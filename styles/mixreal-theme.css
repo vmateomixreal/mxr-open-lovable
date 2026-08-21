@@ -322,7 +322,7 @@ button {
 .mx-home-hero {
   position: relative;
   z-index: 1;
-  padding: clamp(72px, 10vw, 120px) clamp(24px, 7vw, 140px) clamp(40px, 5vw, 64px);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 7vw, 140px) clamp(20px, 3vw, 32px);
 }
 
 .mx-home-input {

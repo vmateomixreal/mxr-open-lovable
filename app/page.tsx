@@ -245,15 +245,10 @@ export default function HomePage() {
         <section className="mx-home-hero overflow-x-clip" id="home-hero">
           <div className="mx-contenedor mx-entra" style={{ ["--mx-orden" as string]: 0 }}>
             <HomeHeroTitle />
-            <p className="mx-texto--guia text-center mx-auto mt-[clamp(18px,2vw,28px)]">
-              {scrapperEnabled
-                ? 'Clona o reimagina cualquier web con calidad de producto, en segundos.'
-                : 'Describe tu idea y genera una app React lista para iterar, en segundos.'}
-            </p>
           </div>
         </section>
 
-          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(48px,6vw,96px)] -mt-2">
+          <div className="relative z-[2] px-[clamp(24px,7vw,140px)] pb-[clamp(80px,12vw,160px)] -mt-2">
             <HomeComposer
               value={url}
               onChange={(value) => {
